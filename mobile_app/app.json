@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "SIF Core Bancario",
+    "slug": "core-bancario",
+    "owner": "nova-sif",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0f19"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.novasif.corebancario"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0f19"
+      },
+      "package": "com.novasif.corebancario"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5f2cbbf8-76a8-48cb-bb46-286e1b6aad2f"
+      }
+    }
+  }
+}
