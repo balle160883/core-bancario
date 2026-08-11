@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caja & Ventanilla Offline-First — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .caja-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 1100px) { .caja-grid { grid-template-columns: 1fr; } }
+    .den-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--color-border-light); }
+    .den-label { font-size: 13px; font-weight: 600; width: 80px; }
+    .den-input { width: 80px; text-align: center; }
+    .den-total { font-size: 13px; font-weight: 700; color: var(--color-gold); width: 100px; text-align: right; }
+
+    /* Banner Offline Resiliente */
+    .offline-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 20px;
+      font-size: 13px; font-weight: 600; transition: var(--transition);
+    }
+    .status-online {
+      background: rgba(40, 167, 69, 0.15); border: 1px solid rgba(40, 167, 69, 0.3); color: #28a745;
+    }
+    .status-offline {
+      background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107;
+    }
+
+    /* Modal Ticket Impresible */
+    .ticket-backdrop {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .ticket-backdrop.open { display: flex; }
+    .ticket-box {
+      background: #ffffff; color: #000000;
+      font-family: 'Courier New', Courier, monospace;
+      width: 340px; padding: 24px; border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      font-size: 12px; line-height: 1.4;
+    }
+    .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 12px; margin-bottom: 12px; }
+    .ticket-row { display: flex; justify-content: space-between; margin: 4px 0; }
+    .ticket-total { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 8px 0; margin: 12px 0; font-weight: bold; font-size: 14px; }
+    .ticket-footer { text-align: center; font-size: 10px; margin-top: 16px; border-top: 1px dashed #000; padding-top: 12px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      .ticket-box, .ticket-box * { visibility: visible; }
+      .ticket-box { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="/copilot.html" class="nav-item"><span class="nav-icon">🤖</span><span class="nav-label">Copilot IA</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item active"><span class="nav-icon">🏧</span><span class="nav-label">Caja & Ventanilla</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/cierre.html" class="nav-item"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/pld-ml.html" class="nav-item"><span class="nav-icon">🧠</span><span class="nav-label">Motor PLD-ML</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Terminal de Caja y Ventanilla</h2>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Caja</span></div>
+        <h1>Terminal de Ventanilla — Modo Resiliente "Offline-First"</h1>
+        <p>Procesamiento de operaciones ultrarrápido (< 10s) con tolerancia a pérdidas de internet en zonas rurales</p>
+      </div>
+
+      <!-- BANNER MODO OFFLINE / ONLINE -->
+      <div class="offline-banner status-online" id="networkBanner">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;" id="networkIcon">🟢</span>
+          <div>
+            <span id="networkText">Conexión en Línea — Sincronizado con Servidor Central SQL Server</span>
+            <div style="font-size:11px;opacity:0.8;" id="pendingText">0 transacciones pendientes de sincronizar</div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-gold" id="btnSyncNow" style="display:none;" onclick="sincronizarColaOffline()">⚡ Sincronizar Ahora</button>
+      </div>
+
+      <div class="caja-grid">
+        <!-- FORMULARIO OPERACIÓN -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">💸 Captura de Operación en Ventanilla</div></div>
+          <div class="card-body">
+            <form id="formOperacion">
+              <div class="form-group">
+                <label class="form-label">Tipo de Operación</label>
+                <select class="form-control" id="opTipo" style="font-weight:700;">
+                  <option value="deposito" selected>🟢 Depósito a Cuenta de Ahorro</option>
+                  <option value="retiro">🔴 Retiro de Cuenta de Ahorro</option>
+                  <option value="pago-credito">💰 Pago / Abono a Crédito</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" id="lblCuenta">Folio de Cuenta / Préstamo</label>
+                <div style="display:flex;gap:10px;">
+                  <input type="text" class="form-control" id="opCuentaId" placeholder="Ej: 35-272871 o ID 1049026" required />
+                  <button type="button" class="btn btn-outline" onclick="buscarCuenta()">🔍 Buscar</button>
+                </div>
+              </div>
+
+              <div id="cuentaInfo" style="display:none;background:var(--color-bg-surface);padding:14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--color-border);">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Titular Identificado</div>
+                <div style="font-weight:700;font-size:15px;" id="infoTitular">—</div>
+                <div style="font-size:12px;color:var(--text-secondary);" id="infoProducto">—</div>
+                <div style="font-size:14px;font-weight:700;color:var(--color-gold);margin-top:6px;" id="infoSaldo">Saldo: $0.00</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Monto de la Operación ($ MXN)</label>
+                <input type="number" class="form-control" id="opMonto" placeholder="0.00" step="0.01" min="1" style="font-size:22px;font-weight:800;color:#28a745;" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Concepto / Referencia</label>
+                <input type="text" class="form-control" id="opConcepto" value="OPERACIÓN EN VENTANILLA" />
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;">⚡ Procesar y Emitir Recibo (< 3s)</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- DESGLOSE DE EFECTIVO / CONTEO BILLETES -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">💵 Arqueo y Desglose de Efectivo</div></div>
+          <div class="card-body">
+            <div class="den-row"><span class="den-label">💵 $1,000</span><input type="number" class="form-control den-input" data-den="1000" value="0" min="0" /><span class="den-total" id="t-1000">$0.00</span></div>
+            <div class="den-row"><span class="den-label">💵 $500</span><input type="number" class="form-control den-input" data-den="500" value="0" min="0" /><span class="den-total" id="t-500">$0.00</span></div>
+            <div class="den-row"><span class="den-label">💵 $200</span><input type="number" class="form-control den-input" data-den="200" value="0" min="0" /><span class="den-total" id="t-200">$0.00</span></div>
+            <div class="den-row"><span class="den-label">💵 $100</span><input type="number" class="form-control den-input" data-den="100" value="0" min="0" /><span class="den-total" id="t-100">$0.00</span></div>
+            <div class="den-row"><span class="den-label">💵 $50</span><input type="number" class="form-control den-input" data-den="50" value="0" min="0" /><span class="den-total" id="t-50">$0.00</span></div>
+            <div class="den-row"><span class="den-label">💵 $20</span><input type="number" class="form-control den-input" data-den="20" value="0" min="0" /><span class="den-total" id="t-20">$0.00</span></div>
+            <div class="den-row"><span class="den-label">🪙 Monedas</span><input type="number" class="form-control den-input" data-den="1" value="0" min="0" /><span class="den-total" id="t-1">$0.00</span></div>
+
+            <div style="margin-top:20px;padding:16px;background:var(--color-bg-surface);border-radius:8px;border:1px solid var(--color-border);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="color:var(--text-secondary);font-size:13px;">Efectivo Recibido:</span>
+                <strong style="font-size:16px;color:var(--color-gold);" id="totalEfectivo">$0.00</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-secondary);font-size:13px;">Cambio a Devolver:</span>
+                <strong style="font-size:16px;color:#28a745;" id="totalCambio">$0.00</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL TICKET RECIBO BANCO -->
+<div class="ticket-backdrop" id="ticketModal">
+  <div>
+    <div class="ticket-box" id="ticketBox">
+      <div class="ticket-header">
+        <strong style="font-size:15px;">CAJA POPULAR — SIF</strong><br />
+        CORE BANCARIO MÉXICO<br />
+        SUCURSAL MATRIZ — R.F.C. CPR010101XXX
+      </div>
+
+      <div style="text-align:center;font-weight:bold;margin-bottom:10px;" id="tkTipo">COMPROBANTE DE DEPÓSITO</div>
+
+      <div class="ticket-row"><span>FOLIO:</span><strong id="tkFolio">000000</strong></div>
+      <div class="ticket-row"><span>FECHA:</span><span id="tkFecha">00/00/0000</span></div>
+      <div class="ticket-row"><span>CAJERO:</span><span id="tkCajero">USUARIO1</span></div>
+      <div style="border-top:1px dashed #000;margin:8px 0;"></div>
+
+      <div class="ticket-row"><span>SOCIO:</span><span id="tkSocio">NOMBRE</span></div>
+      <div class="ticket-row"><span>NO. SOCIO:</span><span id="tkNumSocio">00-0000</span></div>
+      <div class="ticket-row"><span>CUENTA/CRED:</span><span id="tkCuenta">00-0000</span></div>
+      <div class="ticket-row"><span>PRODUCTO:</span><span id="tkProducto">PRODUCTO</span></div>
+
+      <div class="ticket-total">
+        <div class="ticket-row"><span>MONTO IMPORTE:</span><span id="tkMonto">$0.00</span></div>
+      </div>
+
+      <div class="ticket-row"><span>SALDO ANTERIOR:</span><span id="tkSaldoAnt">$0.00</span></div>
+      <div class="ticket-row"><span>NUEVO SALDO:</span><strong id="tkSaldoNvo">$0.00</strong></div>
+
+      <div style="margin-top:24px;text-align:center;">
+        ___________________________<br />
+        FIRMA DE CONFORMIDAD<br />
+        SOCIO / CLIENTE
+      </div>
+
+      <div class="ticket-footer">
+        CONSERVE ESTE COMPROBANTE PARA CUALQUIER ACLARACIÓN.<br />
+        SISTEMA DE INFORMACIÓN FINANCIERO REGULADO CNBV
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Recibo</button>
+      <button class="btn btn-outline" onclick="closeTicket()" style="color:white;border-color:white;">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+// ── COLA DE TRANSACCIONES OFFLINE ─────────────────────────────────────────
+function getOfflineQueue() {
+  return JSON.parse(localStorage.getItem('sif_offline_queue') || '[]');
+}
+function saveOfflineQueue(queue) {
+  localStorage.setItem('sif_offline_queue', JSON.stringify(queue));
+  updateNetworkStatusUI();
+}
+
+function updateNetworkStatusUI() {
+  const queue = getOfflineQueue();
+  const banner = document.getElementById('networkBanner');
+  const icon = document.getElementById('networkIcon');
+  const text = document.getElementById('networkText');
+  const pText = document.getElementById('pendingText');
+  const btnSync = document.getElementById('btnSyncNow');
+
+  const isOnline = navigator.onLine;
+
+  if (isOnline) {
+    banner.className = 'offline-banner status-online';
+    icon.textContent = '🟢';
+    text.textContent = 'Conexión en Línea — Sincronizado con Servidor Central SQL Server';
+  } else {
+    banner.className = 'offline-banner status-offline';
+    icon.textContent = '🟠';
+    text.textContent = 'Modo Ventanilla Offline (Zona Rural — Resiliencia Activada)';
+  }
+
+  pText.textContent = `${queue.length} transacciones en cola local de sincronización`;
+  btnSync.style.display = (isOnline && queue.length > 0) ? 'inline-block' : 'none';
+}
+
+window.addEventListener('online', () => { updateNetworkStatusUI(); sincronizarColaOffline(); });
+window.addEventListener('offline', () => { updateNetworkStatusUI(); toast('Modo Ventanilla Offline Activado. Las operaciones continuarán sin interrupción.', 'warning'); });
+updateNetworkStatusUI();
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401) { localStorage.clear(); window.location.href = '/'; }
+  return r.json();
+}
+function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+let datosCuentaBuscada = null;
+
+// Búsqueda de cuenta
+async function buscarCuenta() {
+  const cuentaId = document.getElementById('opCuentaId').value.trim();
+  const tipo = document.getElementById('opTipo').value;
+  if (!cuentaId) return;
+
+  try {
+    const url = tipo === 'pago-credito' ? `/api/credito?search=${encodeURIComponent(cuentaId)}` : `/api/captacion?search=${encodeURIComponent(cuentaId)}`;
+    const res = await api(url);
+    if (res.success && res.data.length) {
+      const item = res.data[0];
+      datosCuentaBuscada = item;
+      document.getElementById('cuentaInfo').style.display = 'block';
+      document.getElementById('infoTitular').textContent = item.Socio || 'Titular Identificado';
+      document.getElementById('infoProducto').textContent = item.Producto;
+      document.getElementById('infoSaldo').textContent = `Saldo Actual: ${fmt(item.Saldo || item.SaldoCapital)}`;
+    } else {
+      toast('No se encontró la cuenta o crédito', 'warning');
+    }
+  } catch (e) {
+    if (!navigator.onLine) {
+      toast('Búsqueda local en modo offline activa', 'info');
+    }
+  }
+}
+
+// Arqueo efectivo
+document.querySelectorAll('.den-input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    let total = 0;
+    document.querySelectorAll('.den-input').forEach(i => {
+      const val = parseInt(i.value) || 0;
+      const den = parseFloat(i.dataset.den);
+      const sub = val * den;
+      total += sub;
+      document.getElementById(`t-${den}`).textContent = fmt(sub);
+    });
+    document.getElementById('totalEfectivo').textContent = fmt(total);
+
+    const monto = parseFloat(document.getElementById('opMonto').value) || 0;
+    const cambio = total - monto;
+    document.getElementById('totalCambio').textContent = fmt(Math.max(0, cambio));
+  });
+});
+
+// Procesar Operación
+document.getElementById('formOperacion').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const tipo = document.getElementById('opTipo').value;
+  const cuentaId = document.getElementById('opCuentaId').value.trim();
+  const monto = parseFloat(document.getElementById('opMonto').value);
+  const concepto = document.getElementById('opConcepto').value;
+
+  const body = { cuentaId, creditoId: cuentaId, monto, concepto };
+
+  // Si está offline o falla la red, procesar en modo OFFLINE-FIRST
+  if (!navigator.onLine) {
+    procesarOperacionOffline({ tipo, cuentaId, monto, concepto });
+    return;
+  }
+
+  try {
+    const res = await api(`/api/caja/${tipo}`, 'POST', body);
+    if (!res.success) { toast(res.message || 'Error al procesar', 'error'); return; }
+
+    toast('Operación procesada con éxito', 'success');
+    mostrarTicket(res.recibo);
+  } catch (e) {
+    // Si la llamada falla por pérdida repentina de conexión, conmutar a OFFLINE-FIRST
+    procesarOperacionOffline({ tipo, cuentaId, monto, concepto });
+  }
+});
+
+function procesarOperacionOffline(opData) {
+  const uuid = 'OFF-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+  const offlineFolio = Date.now().toString().slice(-6);
+
+  const reciboOffline = {
+    folioTransaccion: `OFFLINE-${offlineFolio}`,
+    tipoOperacion: opData.tipo.toUpperCase() + ' (MODO VENTANILLA RESILIENTE)',
+    numCuenta: opData.cuentaId,
+    producto: datosCuentaBuscada?.Producto || 'CUENTA DE AHORRO / VENTANILLA',
+    socio: datosCuentaBuscada?.Socio || 'SOCIO EN VENTANILLA',
+    numSocio: datosCuentaBuscada?.NumSocio || '—',
+    monto: opData.monto,
+    saldoAnterior: parseFloat(datosCuentaBuscada?.Saldo || 0),
+    nuevoSaldo: opData.tipo === 'retiro'
+      ? parseFloat(datosCuentaBuscada?.Saldo || 0) - opData.monto
+      : parseFloat(datosCuentaBuscada?.Saldo || 0) + opData.monto,
+    fecha: new Date().toISOString(),
+    cajero: USER.username,
+    referencia: `REF-OFF-${offlineFolio}`,
+  };
+
+  // Guardar en cola local
+  const queue = getOfflineQueue();
+  queue.push({
+    uuid,
+    offlineFolio,
+    tipo: opData.tipo,
+    cuentaId: opData.cuentaId,
+    monto: opData.monto,
+    concepto: opData.concepto,
+    offlineTimestamp: new Date().toISOString(),
+  });
+  saveOfflineQueue(queue);
+
+  toast('⚡ Operación registrada en MODO OFFLINE LOCAL. Ticket listo para imprimir.', 'warning');
+  mostrarTicket(reciboOffline);
+}
+
+// Sincronizar cola cuando regrese la red
+async function sincronizarColaOffline() {
+  const queue = getOfflineQueue();
+  if (!queue.length || !navigator.onLine) return;
+
+  toast('🔄 Sincronizando operaciones offline con el servidor central SQL Server...', 'info');
+
+  try {
+    const res = await api('/api/caja/sincronizar-offline', 'POST', { operaciones: queue });
+    if (res.success) {
+      toast(`✅ ${res.exitosas} operacion(es) offline sincronizadas exitosamente en SQL Server`, 'success');
+      saveOfflineQueue([]); // Limpiar cola tras éxito
+    }
+  } catch (e) {
+    toast('Error durante la sincronización automática', 'error');
+  }
+}
+
+function mostrarTicket(r) {
+  document.getElementById('tkTipo').textContent     = r.tipoOperacion;
+  document.getElementById('tkFolio').textContent    = r.folioTransaccion;
+  document.getElementById('tkFecha').textContent    = new Date(r.fecha).toLocaleString('es-MX');
+  document.getElementById('tkCajero').textContent   = r.cajero;
+  document.getElementById('tkSocio').textContent    = r.socio;
+  document.getElementById('tkNumSocio').textContent = r.numSocio || '—';
+  document.getElementById('tkCuenta').textContent   = r.numCuenta;
+  document.getElementById('tkProducto').textContent = r.producto;
+  document.getElementById('tkMonto').textContent    = fmt(r.monto);
+  document.getElementById('tkSaldoAnt').textContent = fmt(r.saldoAnterior);
+  document.getElementById('tkSaldoNvo').textContent = fmt(r.nuevoSaldo);
+
+  document.getElementById('ticketModal').classList.add('open');
+}
+
+function closeTicket() {
+  document.getElementById('ticketModal').classList.remove('open');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+    "name": "core-bancario",
+    "version": "1.0.0",
+    "main": "backend/server.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node backend/server.js",
+        "dev": "node backend/server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "helmet": "^8.3.0",
+        "jsonwebtoken": "^9.0.3",
+        "morgan": "^1.11.0",
+        "mssql": "^12.7.0",
+        "pbkdf2": "^3.1.6"
+    }
+}

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cierre de Día — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .cierre-box {
+      background: linear-gradient(135deg, var(--color-bg-card), var(--color-bg-surface));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: 30px;
+      margin-bottom: 24px; text-align: center;
+    }
+    .cierre-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; text-align: left;
+    }
+    @media (max-width: 900px) { .cierre-grid { grid-template-columns: repeat(2, 1fr); } }
+    .cierre-stat {
+      background: var(--color-bg-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); padding: 16px;
+    }
+    .cierre-val { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+    .cierre-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/cierre.html" class="nav-item active"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Cierre de Día & Devengamiento Nocturno</h2>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Gestión</span></div>
+        <h1>Proceso Automático de Cierre de Día (Batch EOD)</h1>
+        <p>Ejecución atómica del devengamiento de intereses, clasificación de mora y generación de póliza contable en SQL Server 2022</p>
+      </div>
+
+      <div class="cierre-box">
+        <div style="font-size:48px;margin-bottom:12px;">🌙</div>
+        <h2 style="font-size:24px;font-weight:800;margin-bottom:8px;">Ejecutar Cierre Contable y Devengamiento Nocturno</h2>
+        <p style="color:var(--text-secondary);max-width:600px;margin:0 auto 20px auto;font-size:13px;">
+          Este proceso ejecuta el Stored Procedure optimizado <code style="color:var(--color-gold);">sp_SIF_EjecutarCierreDia</code> sobre los 1,000,000+ préstamos de la caja popular.
+        </p>
+
+        <button class="btn btn-gold" id="btnEjecutarCierre" style="padding:14px 28px;font-size:16px;">⚡ Ejecutar Cierre de Día Ahora</button>
+
+        <div class="cierre-grid" id="resGrid" style="display:none;">
+          <div class="cierre-stat">
+            <div class="cierre-val" id="resDevengados" style="color:var(--color-primary-light);">0</div>
+            <div class="cierre-lbl">Créditos Devengados</div>
+          </div>
+          <div class="cierre-stat">
+            <div class="cierre-val" id="resMonto" style="color:#28a745;">$0.00</div>
+            <div class="cierre-lbl">Interés Devengado Hoy</div>
+          </div>
+          <div class="cierre-stat">
+            <div class="cierre-val" id="resMora" style="color:#dc3545;">0</div>
+            <div class="cierre-lbl">Reclasificados a Mora</div>
+          </div>
+          <div class="cierre-stat">
+            <div class="cierre-val" id="resPoliza" style="color:var(--color-gold);">#0</div>
+            <div class="cierre-lbl">Póliza Contable ACC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+document.getElementById('btnEjecutarCierre').addEventListener('click', async () => {
+  const btn = document.getElementById('btnEjecutarCierre');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ejecutando Cierre en SQL Server 2022...';
+
+  try {
+    const res = await fetch('/api/caja/cierre-dia', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = '⚡ Ejecutar Cierre de Día Ahora';
+
+    if (!data.success) { toast('Error en Cierre de Día: ' + data.message, 'error'); return; }
+
+    toast('Cierre de día ejecutado exitosamente', 'success');
+    document.getElementById('resGrid').style.display = 'grid';
+    document.getElementById('resDevengados').textContent = data.creditosDevengados.toLocaleString('es-MX');
+    document.getElementById('resMonto').textContent      = fmt(data.totalInteresDevengado);
+    document.getElementById('resMora').textContent       = data.moraIdentificada.toLocaleString('es-MX');
+    document.getElementById('resPoliza').textContent     = `#${data.polizaContableId}`;
+
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '⚡ Ejecutar Cierre de Día Ahora';
+    toast('Error de conexión', 'error');
+  }
+});
+</script>
+</body>
+</html>

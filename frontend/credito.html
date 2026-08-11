@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crédito — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 40px 24px; overflow-y: auto;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--color-bg-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); width: 100%; max-width: 850px;
+      overflow: hidden; margin: auto; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.93) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--color-border);
+      background: var(--color-bg-surface);
+    }
+    .filter-pill {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--color-border);
+      background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: var(--transition); font-family: var(--font-family);
+    }
+    .filter-pill:hover { border-color: var(--color-primary-light); color: var(--text-primary); }
+    .filter-pill.active { background: var(--color-primary-glow); border-color: var(--color-primary-light); color: var(--color-primary-light); }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card {
+      background: var(--color-bg-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); padding: 16px; text-align: center;
+    }
+    .kpi-val { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .kpi-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="/copilot.html" class="nav-item"><span class="nav-icon">🤖</span><span class="nav-label">Copilot IA</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item active"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/cierre.html" class="nav-item"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/pld-ml.html" class="nav-item"><span class="nav-icon">🧠</span><span class="nav-label">Motor PLD-ML</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Módulo de Crédito</h2>
+      <div class="topbar-search">
+        <span class="topbar-search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Buscar por crédito, socio, número..." />
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Crédito</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div>
+            <h1>Cartera de Crédito</h1>
+            <p>Gestión de créditos vigentes, amortizaciones, abonos y originación</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <a href="/originacion.html" class="btn btn-outline" style="font-size:13px;">🎯 Ir a Scoring & Simulación</a>
+            <button class="btn btn-primary" onclick="openSolicitudModal()">➕ Solicitud de Crédito</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros de estado -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <button class="filter-pill active" data-status="all">🔵 Todos</button>
+        <button class="filter-pill" data-status="active">🟢 Vigentes / Activos</button>
+        <button class="filter-pill" data-status="mora">🔴 En Mora</button>
+      </div>
+
+      <!-- Tabla Crédito -->
+      <div class="card" style="position:relative;">
+        <div class="loading-overlay" id="tableLoading" style="display:none;">
+          <div class="spinner"></div>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Folio Crédito</th>
+                <th>Producto</th>
+                <th>Socio Deudor</th>
+                <th>Monto Otorgado</th>
+                <th>Saldo Capital</th>
+                <th>Otorgamiento</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="creditoBody">
+              <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando créditos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--color-border);">
+          <div style="font-size:12px;color:var(--text-muted);" id="pageInfo">—</div>
+          <div class="pagination" id="paginacion" style="padding:0;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Detalle / Tabla Amortización / Abono -->
+<div class="modal-backdrop" id="credModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;" id="credTitle">Detalle de Crédito</h3>
+        <p style="font-size:12px;color:var(--text-secondary);" id="credSub">—</p>
+      </div>
+      <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;" onclick="closeCred()">✕</button>
+    </div>
+    <div style="padding:20px;max-height:75vh;overflow-y:auto;" id="credContent">
+      <div class="spinner" style="margin:30px auto;display:block;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Abono -->
+<div class="modal-backdrop" id="abonoModal">
+  <div class="modal-box" style="max-width:450px;">
+    <div class="modal-header">
+      <h3 style="font-size:16px;font-weight:700;">💵 Registrar Abono a Crédito</h3>
+      <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;" onclick="closeAbonoModal()">✕</button>
+    </div>
+    <div style="padding:24px;">
+      <input type="hidden" id="abonoCreditoId" />
+      <div class="form-group">
+        <label class="form-label">Socio Deudor</label>
+        <input type="text" class="form-control" id="abonoSocio" readonly style="opacity:0.8;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Saldo Capital Actual</label>
+        <input type="text" class="form-control" id="abonoSaldoActual" readonly style="color:#dc3545;font-weight:800;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monto del Abono ($MXN)</label>
+        <input type="number" class="form-control" id="abonoMonto" placeholder="Ej. 5000" step="0.01" style="font-weight:700;font-size:16px;" />
+      </div>
+      <button class="btn btn-gold btn-block" id="btnProcesarAbono" style="padding:12px;font-size:14px;margin-top:10px;">
+        ✅ Aplicar Abono a Crédito
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Solicitud de Crédito -->
+<div class="modal-backdrop" id="solicitudModal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 style="font-size:16px;font-weight:700;">➕ Nueva Solicitud de Crédito</h3>
+      <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;" onclick="closeSolicitudModal()">✕</button>
+    </div>
+    <div style="padding:24px;">
+      <div class="form-group">
+        <label class="form-label">Número de Socio (FriendlyCode)</label>
+        <input type="text" class="form-control" id="solNumSocio" placeholder="Ej. 10000000001" style="font-weight:700;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Producto de Crédito</label>
+        <select class="form-control" id="solProducto" style="font-weight:700;"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Monto Solicitado ($)</label>
+          <input type="number" class="form-control" id="solMonto" placeholder="Ej. 50000" step="1000" style="font-weight:700;" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Plazo (Meses)</label>
+          <input type="number" class="form-control" id="solPlazo" value="12" min="1" max="60" style="font-weight:700;" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tasa Anual (%)</label>
+        <input type="number" class="form-control" id="solTasa" value="18.00" step="0.5" style="font-weight:700;" />
+      </div>
+      <button class="btn btn-primary btn-block" id="btnCrearSolicitud" style="padding:12px;font-size:14px;margin-top:10px;">
+        🚀 Registar y Aprobar Crédito
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+async function api(path, options = {}) {
+  const headers = { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...options.headers };
+  const r = await fetch(path, { ...options, headers });
+  if (r.status === 401) { localStorage.clear(); window.location.href = '/'; }
+  return r.json();
+}
+
+function fmt(n) {
+  if (n == null) return '$0.00';
+  return '$' + parseFloat(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+let currentPage = 1;
+let currentSearch = '';
+let currentStatus = 'all';
+
+const ESTADOS_MAP = { 7: 'Vigente', 6: 'En Mora', 8: 'Liquidado', 0: 'Cancelado' };
+
+async function loadCredito(page = 1) {
+  currentPage = page;
+  document.getElementById('tableLoading').style.display = 'flex';
+  try {
+    const res = await api(`/api/credito?page=${page}&limit=20&search=${encodeURIComponent(currentSearch)}&status=${currentStatus}`);
+    document.getElementById('tableLoading').style.display = 'none';
+
+    if (!res.success) { toast('Error al cargar créditos', 'error'); return; }
+
+    const total = res.pagination.total;
+    document.getElementById('pageInfo').textContent = `Mostrando ${res.data.length} de ${total.toLocaleString('es-MX')} créditos`;
+
+    const tbody = document.getElementById('creditoBody');
+    if (!res.data.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No se encontraron créditos</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = res.data.map(c => {
+      const estadoStr = ESTADOS_MAP[c.Estado] || `Estado ${c.Estado}`;
+      const badgeCls  = c.Estado === 7 ? 'badge-success' : c.Estado === 6 ? 'badge-danger' : 'badge-warning';
+      return `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--color-gold);">${c.Folio || '#' + c.CreditoId}</td>
+          <td style="font-weight:600;">${c.Producto || 'CRÉDITO PERSONAL'}</td>
+          <td>${c.Socio || '—'}</td>
+          <td style="color:var(--text-secondary);">${fmt(c.MontoOriginal)}</td>
+          <td style="color:#dc3545;font-weight:700;font-size:14px;">${fmt(c.SaldoCapital)}</td>
+          <td style="font-size:12px;color:var(--text-secondary);">${fmtDate(c.FechaOtorgamiento)}</td>
+          <td style="font-size:12px;color:var(--text-secondary);">${fmtDate(c.FechaVencimiento)}</td>
+          <td><span class="badge ${badgeCls}">${estadoStr}</span></td>
+          <td style="text-align:center;display:flex;gap:6px;justify-content:center;">
+            <button class="btn btn-outline btn-sm" onclick="openCred(${c.CreditoId})">📋 Detalle</button>
+            <button class="btn btn-gold btn-sm" onclick="openAbonoModal(${c.CreditoId}, '${c.Socio.replace(/'/g,"\\'")}', ${c.SaldoCapital})">💵 Abono</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    renderPaginacion(res.pagination);
+  } catch (e) {
+    document.getElementById('tableLoading').style.display = 'none';
+    toast('Error de conexión', 'error');
+  }
+}
+
+function renderPaginacion(p) {
+  const el = document.getElementById('paginacion');
+  if (p.pages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  const start = Math.max(1, p.page - 2);
+  const end   = Math.min(p.pages, p.page + 2);
+  if (p.page > 1) html += `<button class="page-btn" onclick="loadCredito(${p.page-1})">◀</button>`;
+  for (let i = start; i <= end; i++) {
+    html += `<button class="page-btn ${i===p.page?'active':''}" onclick="loadCredito(${i})">${i}</button>`;
+  }
+  if (p.page < p.pages) html += `<button class="page-btn" onclick="loadCredito(${p.page+1})">▶</button>`;
+  el.innerHTML = html;
+}
+
+let debounce;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => {
+    currentSearch = e.target.value.trim();
+    loadCredito(1);
+  }, 450);
+});
+
+document.querySelectorAll('.filter-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStatus = btn.dataset.status;
+    loadCredito(1);
+  });
+});
+
+async function openCred(id) {
+  document.getElementById('credTitle').textContent = `Detalle de Crédito #${id}`;
+  document.getElementById('credModal').classList.add('open');
+  document.getElementById('credContent').innerHTML = '<div class="spinner" style="margin:30px auto;display:block;"></div>';
+
+  try {
+    const res = await api(`/api/credito/${id}`);
+    if (!res.success) {
+      document.getElementById('credContent').innerHTML = '<div style="text-align:center;color:var(--color-danger);padding:20px;">Error al obtener detalle</div>';
+      return;
+    }
+
+    const { credito, balances, amortizacion } = res.data;
+    const saldoCapital = balances.find(b => b.Concepto.includes('Capital') || b.Concepto.includes('PRINCIPAL'))?.CurrentBalance || 0;
+    document.getElementById('credSub').textContent = `${credito.Producto} — ${credito.Socio}`;
+
+    document.getElementById('credContent').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-secondary);">Socio: <strong>${credito.Socio}</strong> (${credito.NumSocio})</div>
+        <button class="btn btn-gold btn-sm" onclick="closeCred(); openAbonoModal(${credito.Id}, '${credito.Socio.replace(/'/g,"\\'")}', ${saldoCapital})">💵 Registrar Abono</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;background:var(--color-bg-surface);padding:16px;border-radius:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Folio Crédito</div>
+          <div style="font-family:monospace;color:var(--color-gold);font-weight:700;">${credito.FriendlyCode || credito.Id}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Socio Deudor</div>
+          <div style="font-weight:600;">${credito.Socio || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Monto Otorgado</div>
+          <div style="font-weight:700;color:var(--text-primary);">${fmt(credito.MontoOriginal)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Tasa de Interés</div>
+          <div>${credito.Tasa ? credito.Tasa + '%' : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Otorgamiento</div>
+          <div>${fmtDate(credito.OriginationDate)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Vencimiento</div>
+          <div>${fmtDate(credito.MaturityDate)}</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--color-gold);">📊 Desglose de Balances</h4>
+      <table class="data-table" style="margin-bottom:20px;">
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th>Inicial</th>
+            <th>Pagado</th>
+            <th>Saldo Actual</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${balances.map(b => `
+            <tr>
+              <td style="font-weight:600;">${b.Concepto}</td>
+              <td style="color:var(--text-secondary);">${fmt(b.InitialBalance)}</td>
+              <td style="color:#28a745;">${fmt(b.Paid)}</td>
+              <td style="font-weight:700;color:#dc3545;">${fmt(b.CurrentBalance)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      ${amortizacion.length ? `
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--color-gold);">📅 Tabla de Amortización</h4>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>No. Pago</th>
+              <th>Vencimiento</th>
+              <th>Capital</th>
+              <th>Interés</th>
+              <th>Pago Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${amortizacion.map(a => `
+              <tr>
+                <td style="font-weight:600;">${a.NoPago}</td>
+                <td>${fmtDate(a.FechaVencimiento)}</td>
+                <td>${fmt(a.Capital)}</td>
+                <td>${fmt(a.Interes)}</td>
+                <td style="font-weight:700;">${fmt(a.PagoTotal)}</td>
+                <td><span class="badge ${a.Paid ? 'badge-success' : 'badge-warning'}">${a.Paid ? 'Pagado' : 'Pendiente'}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+    `;
+  } catch (e) {
+    document.getElementById('credContent').innerHTML = '<div style="text-align:center;color:var(--color-danger);padding:20px;">Error al cargar detalle</div>';
+  }
+}
+
+function closeCred() {
+  document.getElementById('credModal').classList.remove('open');
+}
+
+// ── Modales de Abono y Solicitud ─────────────────────────────────────────
+function openAbonoModal(id, socio, saldo) {
+  document.getElementById('abonoCreditoId').value = id;
+  document.getElementById('abonoSocio').value = socio;
+  document.getElementById('abonoSaldoActual').value = fmt(saldo);
+  document.getElementById('abonoMonto').value = '';
+  document.getElementById('abonoModal').classList.add('open');
+}
+function closeAbonoModal() {
+  document.getElementById('abonoModal').classList.remove('open');
+}
+
+document.getElementById('btnProcesarAbono').addEventListener('click', async () => {
+  const creditoId = document.getElementById('abonoCreditoId').value;
+  const monto = document.getElementById('abonoMonto').value;
+
+  if (!monto || parseFloat(monto) <= 0) {
+    toast('Ingresa un monto válido para el abono', 'warning');
+    return;
+  }
+
+  try {
+    const res = await api('/api/credito/abono', {
+      method: 'POST',
+      body: JSON.stringify({ creditoId, monto })
+    });
+
+    if (res.success) {
+      toast(res.message, 'success');
+      closeAbonoModal();
+      loadCredito(currentPage);
+    } else {
+      toast(res.message || 'Error al aplicar abono', 'error');
+    }
+  } catch (e) {
+    toast('Error de conexión al abonar', 'error');
+  }
+});
+
+async function openSolicitudModal() {
+  document.getElementById('solicitudModal').classList.add('open');
+  // Cargar productos
+  try {
+    const res = await api('/api/credito/productos');
+    if (res.success && res.data.length) {
+      document.getElementById('solProducto').innerHTML = res.data.map(p => `<option value="${p.Id}">${p.Nombre}</option>`).join('');
+    }
+  } catch(e) {}
+}
+function closeSolicitudModal() {
+  document.getElementById('solicitudModal').classList.remove('open');
+}
+
+document.getElementById('btnCrearSolicitud').addEventListener('click', async () => {
+  const numSocio = document.getElementById('solNumSocio').value.trim();
+  const productoId = document.getElementById('solProducto').value;
+  const monto = document.getElementById('solMonto').value;
+  const plazoMeses = document.getElementById('solPlazo').value;
+  const tasaAnual = document.getElementById('solTasa').value;
+
+  if (!numSocio || !monto || parseFloat(monto) <= 0) {
+    toast('Ingresa número de socio y monto válido', 'warning');
+    return;
+  }
+
+  try {
+    const res = await api('/api/credito/solicitud', {
+      method: 'POST',
+      body: JSON.stringify({ numSocio, productoId, monto, plazoMeses, tasaAnual })
+    });
+
+    if (res.success) {
+      toast(res.message, 'success');
+      closeSolicitudModal();
+      loadCredito(1);
+    } else {
+      toast(res.message || 'Error al crear solicitud', 'error');
+    }
+  } catch (e) {
+    toast('Error al registrar solicitud', 'error');
+  }
+});
+
+loadCredito(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguridad & Permisos de Roles — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .exp-tabs { display: flex; border-bottom: 1px solid var(--color-border); background: var(--color-bg-surface); margin-bottom: 24px; }
+    .exp-tab {
+      padding: 12px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none;
+      background: none; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: var(--transition);
+    }
+    .exp-tab.active { color: var(--color-primary-light); border-bottom-color: var(--color-primary-light); }
+    .exp-panel { display: none; }
+    .exp-panel.active { display: block; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--color-bg-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); width: 100%; max-width: 550px; padding: 24px;
+    }
+    .perm-check {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; background: var(--color-bg-surface);
+      border: 1px solid var(--color-border-light); border-radius: 8px; margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/seguridad.html" class="nav-item active"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Seguridad & Matriz de Permisos por Rol</h2>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Seguridad</span></div>
+        <h1>Control de Acceso & Matriz de Permisos de Roles</h1>
+        <p>Administración de usuarios, asignación de permisos por rol en SEC.RolePermissions y auditoría SEC.Audit</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="exp-tabs" style="border-radius:var(--radius-lg);overflow:hidden;">
+        <button class="exp-tab active" data-tab="usuarios">👥 Usuarios & Roles</button>
+        <button class="exp-tab" data-tab="roles">🛡️ Matriz de Roles & Permisos (SEC.RolePermissions)</button>
+        <button class="exp-tab" data-tab="auditoria">🔐 Bitácora de Auditoría (SEC.Audit)</button>
+      </div>
+
+      <!-- TAB 1: USUARIOS -->
+      <div class="exp-panel active" id="panel-usuarios">
+        <div class="card">
+          <div class="card-header"><div class="card-title">👥 Usuarios Registrados (SEC.User)</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Tipo Usuario</th>
+                  <th>Sucursal Principal</th>
+                  <th>Roles Asignados</th>
+                  <th>Estado</th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usuariosBody">
+                <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ROLES & PERMISOS -->
+      <div class="exp-panel" id="panel-roles">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🛡️ Catálogo de Roles & Permisos Asignados</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID Rol</th>
+                  <th>Nombre del Rol</th>
+                  <th>Usuarios Asignados</th>
+                  <th>Permisos Activos</th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="rolesBody">
+                <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando roles y permisos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: AUDITORÍA -->
+      <div class="exp-panel" id="panel-auditoria">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔐 Bitácora de Auditoría Inmutable (SEC.Audit)</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha & Hora</th>
+                  <th>Usuario / Proceso</th>
+                  <th>Acción Ejecutada</th>
+                  <th>Entidad Afectada</th>
+                  <th>IP Origen</th>
+                  <th>Detalle Transacción</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody">
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando auditoría...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL ASIGNAR ROL A USUARIO -->
+<div class="modal-backdrop" id="modalAsignar">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:16px;font-weight:700;">Asignar Rol a Usuario</h3>
+      <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;" onclick="closeAsignar()">✕</button>
+    </div>
+    <form id="formAsignarRol">
+      <input type="hidden" id="asigUserId" />
+      <div class="form-group">
+        <label class="form-label">Usuario Seleccionado</label>
+        <input type="text" class="form-control" id="asigUserName" readonly style="font-weight:700;color:var(--color-primary-light);" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seleccionar Rol (SEC.Role)</label>
+        <select class="form-control" id="asigRoleId" required></select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">🛡️ Confirmar Asignación</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL GESTIONAR PERMISOS DE ROL -->
+<div class="modal-backdrop" id="modalPermisosRol">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;" id="permRolTitle">Gestión de Permisos del Rol</h3>
+        <div style="font-size:12px;color:var(--text-secondary);" id="permRolSub">SEC.RolePermissions</div>
+      </div>
+      <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;" onclick="closePermisosRol()">✕</button>
+    </div>
+
+    <form id="formPermisosRol">
+      <input type="hidden" id="permRolId" />
+      <div id="permisosCheckList" style="max-height:300px;overflow-y:auto;margin-bottom:20px;">
+        <div style="text-align:center;padding:20px;color:var(--text-muted);">Cargando permisos...</div>
+      </div>
+      <button type="submit" class="btn btn-gold" style="width:100%;">💾 Guardar Permisos del Rol</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401) { localStorage.clear(); window.location.href = '/'; }
+  return r.json();
+}
+function fmtDate(d) { return d ? new Date(d).toLocaleString('es-MX') : '—'; }
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+let todosPermisos = [];
+
+async function loadUsuarios() {
+  try {
+    const res = await api('/api/seguridad/usuarios');
+    if (res.success) {
+      document.getElementById('usuariosBody').innerHTML = res.data.length ? res.data.map(u => `
+        <tr>
+          <td style="font-weight:600;">#${u.Id}</td>
+          <td style="font-weight:700;color:var(--color-primary-light);">${u.UserName}</td>
+          <td style="color:var(--text-secondary);">${u.TipoUsuario || '—'}</td>
+          <td style="color:var(--text-secondary);">${u.SucursalPrincipal || '—'}</td>
+          <td><span class="badge badge-info" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${u.RolesAsignados || 'Sin Rol'}</span></td>
+          <td><span class="badge ${u.Estado === 1 ? 'badge-success' : 'badge-danger'}">${u.Estado === 1 ? 'Activo' : 'Inactivo'}</span></td>
+          <td style="text-align:center;">
+            <button class="btn btn-outline btn-sm" onclick="openAsignar(${u.Id}, '${u.UserName}')">🛡️ Asignar Rol</button>
+          </td>
+        </tr>
+      `).join('') : `<tr><td colspan="7" style="text-align:center;padding:20px;">Sin usuarios</td></tr>`;
+    }
+  } catch (e) {}
+}
+
+async function loadRoles() {
+  try {
+    const res = await api('/api/seguridad/roles');
+    if (res.success) {
+      document.getElementById('rolesBody').innerHTML = res.data.length ? res.data.map(r => `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--color-gold);">#${r.Id}</td>
+          <td style="font-weight:700;">${r.NombreRol}</td>
+          <td><span class="badge badge-gold">${r.TotalUsuariosAsignados} usuarios</span></td>
+          <td><span class="badge badge-info">${r.TotalPermisosAsignados} permisos</span></td>
+          <td style="text-align:center;">
+            <button class="btn btn-outline btn-sm" onclick="openPermisosRol(${r.Id}, '${r.NombreRol.replace(/'/g,"")}')">🔑 Gestionar Permisos</button>
+          </td>
+        </tr>
+      `).join('') : `<tr><td colspan="5" style="text-align:center;padding:20px;">Sin roles</td></tr>`;
+
+      document.getElementById('asigRoleId').innerHTML = res.data.map(r => `
+        <option value="${r.Id}">${r.NombreRol}</option>
+      `).join('');
+    }
+  } catch (e) {}
+}
+
+async function loadAudit() {
+  try {
+    const res = await api('/api/seguridad/auditoria');
+    if (res.success) {
+      document.getElementById('auditBody').innerHTML = res.data.length ? res.data.map(a => `
+        <tr>
+          <td style="font-size:12px;color:var(--text-muted);">${fmtDate(a.Fecha)}</td>
+          <td style="font-weight:700;color:var(--color-primary-light);">${a.Usuario || 'Sistema'}</td>
+          <td><span class="badge badge-info">${a.Accion}</span></td>
+          <td style="color:var(--text-secondary);">${a.Entidad || '—'}</td>
+          <td style="font-family:monospace;font-size:12px;color:var(--text-muted);">${a.Ip || '—'}</td>
+          <td style="font-size:12px;color:var(--color-gold);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.Detalle || '—'}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" style="text-align:center;padding:20px;">Sin registros</td></tr>`;
+    }
+  } catch (e) {}
+}
+
+async function openPermisosRol(roleId, roleName) {
+  document.getElementById('permRolId').value = roleId;
+  document.getElementById('permRolTitle').textContent = `Permisos del Rol: ${roleName}`;
+  document.getElementById('modalPermisosRol').classList.add('open');
+
+  try {
+    const [pCat, pRol] = await Promise.all([
+      api('/api/seguridad/permisos'),
+      api(`/api/seguridad/roles/${roleId}/permisos`)
+    ]);
+
+    todosPermisos = pCat.data || [];
+    const asignadosIds = (pRol.data || []).map(p => p.Id);
+
+    document.getElementById('permisosCheckList').innerHTML = todosPermisos.map(p => {
+      const checked = asignadosIds.includes(p.Id) ? 'checked' : '';
+      return `
+        <div class="perm-check">
+          <div>
+            <div style="font-weight:700;font-size:13px;">${p.Nombre} (${p.Codigo})</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${p.Descripcion}</div>
+          </div>
+          <input type="checkbox" class="chk-permiso" value="${p.Id}" ${checked} style="width:18px;height:18px;" />
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) { toast('Error al cargar permisos del rol', 'error'); }
+}
+
+function closePermisosRol() {
+  document.getElementById('modalPermisosRol').classList.remove('open');
+}
+
+document.getElementById('formPermisosRol').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const roleId = document.getElementById('permRolId').value;
+  const permissionIds = [];
+  document.querySelectorAll('.chk-permiso:checked').forEach(c => permissionIds.push(parseInt(c.value)));
+
+  try {
+    const res = await api(`/api/seguridad/roles/${roleId}/permisos`, 'POST', { permissionIds });
+    if (res.success) {
+      toast('Permisos del rol actualizados exitosamente', 'success');
+      closePermisosRol();
+      loadRoles();
+    }
+  } catch (e) { toast('Error al guardar permisos', 'error'); }
+});
+
+function openAsignar(id, name) {
+  document.getElementById('asigUserId').value = id;
+  document.getElementById('asigUserName').value = name;
+  document.getElementById('modalAsignar').classList.add('open');
+}
+
+function closeAsignar() {
+  document.getElementById('modalAsignar').classList.remove('open');
+}
+
+document.getElementById('formAsignarRol').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userId = document.getElementById('asigUserId').value;
+  const roleId = document.getElementById('asigRoleId').value;
+
+  try {
+    const res = await api(`/api/seguridad/usuarios/${userId}/asignar-rol`, 'POST', { roleId });
+    if (res.success) {
+      toast('Rol asignado correctamente', 'success');
+      closeAsignar();
+      loadUsuarios();
+      loadRoles();
+    }
+  } catch (e) { toast('Error al asignar rol', 'error'); }
+});
+
+// Navigation Tabs
+document.querySelectorAll('.exp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.exp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.exp-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+    if (tab.dataset.tab === 'roles') loadRoles();
+    if (tab.dataset.tab === 'auditoria') loadAudit();
+  });
+});
+
+loadUsuarios();
+loadRoles();
+</script>
+</body>
+</html>

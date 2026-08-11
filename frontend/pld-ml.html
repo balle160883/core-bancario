@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Motor PLD-ML — Detección de Anomalías Transaccionales</title>
+  <meta name="description" content="Motor de Prevención de Lavado de Dinero con Machine Learning para detección de anomalías transaccionales según normativa CNBV/UIF"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"/>
+  <link rel="stylesheet" href="/assets/css/main.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Tabs ── */
+    .pld-tabs { display:flex; border-bottom:1px solid var(--color-border); margin-bottom:24px; }
+    .pld-tab {
+      padding:12px 22px; font-size:13px; font-weight:600; cursor:pointer;
+      border:none; background:none; color:var(--text-secondary);
+      border-bottom:2px solid transparent; transition:var(--transition);
+    }
+    .pld-tab.active { color:var(--color-gold); border-bottom-color:var(--color-gold); }
+    .pld-panel { display:none; }
+    .pld-panel.active { display:block; }
+
+    /* ── Risk Score Badge ── */
+    .risk-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700;
+    }
+    .risk-alto { background:rgba(220,53,69,.15); color:#dc3545; border:1px solid rgba(220,53,69,.3); }
+    .risk-medio-alto { background:rgba(255,153,0,.15); color:#ff9900; border:1px solid rgba(255,153,0,.3); }
+    .risk-medio { background:rgba(201,168,76,.15); color:var(--color-gold); border:1px solid rgba(201,168,76,.3); }
+
+    /* ── Barra de score ── */
+    .score-bar-wrap { width:80px; height:8px; background:rgba(255,255,255,.1); border-radius:4px; overflow:hidden; display:inline-block; margin-right:6px; vertical-align:middle; }
+    .score-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
+
+    /* ── Señales chip ── */
+    .senal-chip {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; margin:2px;
+    }
+    .senal-on  { background:rgba(220,53,69,.15); color:#dc3545; }
+    .senal-off { background:rgba(255,255,255,.05); color:var(--text-muted); }
+
+    /* ── Panel análisis running ── */
+    .ml-running {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:60px; gap:16px; color:var(--text-secondary);
+    }
+    .ml-spinner {
+      width:48px; height:48px; border:4px solid rgba(201,168,76,.2);
+      border-top-color:var(--color-gold); border-radius:50%;
+      animation:spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Export buttons ── */
+    .export-bar {
+      display:flex; gap:12px; align-items:center; padding:16px 20px;
+      background:var(--color-bg-surface); border-bottom:1px solid var(--color-border);
+    }
+
+    /* ── Stats row ── */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--color-bg-card); border:1px solid var(--color-border);
+      border-radius:var(--radius-md); padding:16px; text-align:center;
+    }
+    .stat-val { font-size:22px; font-weight:800; margin-bottom:4px; }
+    .stat-lbl { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; }
+
+    /* ── Donut chart ── */
+    .chart-wrap { max-width:300px; margin:0 auto; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="/copilot.html" class="nav-item"><span class="nav-icon">🤖</span><span class="nav-label">Copilot IA</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/cierre.html" class="nav-item"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld-ml.html" class="nav-item active"><span class="nav-icon">🛡️</span><span class="nav-label">Motor PLD-ML</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#dc3545,#ff9900);display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;">Motor PLD-ML</div>
+          <div style="font-size:11px;color:var(--color-gold);">Detección de Anomalías por Machine Learning — Normativa LFPIORPI</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>PLD</span> › <span>Motor ML</span></div>
+        <h1>Motor de Prevención de Lavado de Dinero con Machine Learning</h1>
+        <p>Algoritmo Z-Score + Behavioral Baseline por socio · Umbral UIF · Generación de ROS XML/CSV lista para la CNBV</p>
+      </div>
+
+      <!-- CONFIGURACIÓN DEL ANÁLISIS -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-body" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;padding:20px;">
+          <div class="form-group" style="margin:0;min-width:160px;">
+            <label class="form-label">Período de análisis</label>
+            <select class="form-control" id="selDias" style="font-weight:700;">
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="180">Últimos 6 meses</option>
+              <option value="365" selected>Último año (2025-2026)</option>
+              <option value="730">Últimos 2 años (histórico)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;min-width:160px;">
+            <label class="form-label">Umbral de Riesgo mínimo (0–100)</label>
+            <input type="number" class="form-control" id="inpUmbral" value="40" min="1" max="100" style="font-weight:700;" />
+          </div>
+          <button class="btn btn-gold" id="btnAnalizar" style="padding:10px 24px;font-size:14px;">
+            🧠 Ejecutar Análisis ML
+          </button>
+          <a class="btn btn-outline" id="btnXML" href="#" style="padding:10px 16px;font-size:13px;" target="_blank">
+            📄 Exportar XML UIF
+          </a>
+          <a class="btn btn-outline" id="btnCSV" href="#" style="padding:10px 16px;font-size:13px;" target="_blank">
+            📊 Exportar CSV / Excel
+          </a>
+        </div>
+      </div>
+
+      <!-- ESTADÍSTICAS -->
+      <div class="stats-row" id="statsRow" style="display:none;">
+        <div class="stat-card">
+          <div class="stat-val" id="statTxAnalizadas" style="color:var(--color-primary-light);">—</div>
+          <div class="stat-lbl">Transacciones Analizadas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statPersonas" style="color:#28a745;">—</div>
+          <div class="stat-lbl">Socios en el Período</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statAlertas" style="color:#dc3545;">—</div>
+          <div class="stat-lbl">Alertas Generadas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statAlto" style="color:#dc3545;">—</div>
+          <div class="stat-lbl">Riesgo ALTO</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statMonto" style="color:var(--color-gold);">—</div>
+          <div class="stat-lbl">Monto en Riesgo Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statTiempo" style="color:#9b59b6;">—</div>
+          <div class="stat-lbl">Tiempo de Análisis</div>
+        </div>
+      </div>
+
+      <!-- TABS DE RESULTADOS -->
+      <div class="pld-tabs" id="resultTabs" style="display:none;">
+        <button class="pld-tab active" data-tab="alertas">🚨 Alertas ML Detectadas</button>
+        <button class="pld-tab" data-tab="distribucion">📊 Distribución de Riesgo</button>
+        <button class="pld-tab" data-tab="metodologia">🧬 Metodología ML</button>
+      </div>
+
+      <!-- TAB 1: ALERTAS -->
+      <div class="pld-panel active" id="panel-alertas">
+        <!-- Estado inicial -->
+        <div class="card" id="inicialCard">
+          <div class="ml-running" style="background:transparent;">
+            <div style="font-size:48px;">🧠</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text-primary);">Motor PLD-ML listo para analizar</div>
+            <div style="font-size:13px;text-align:center;max-width:400px;">Configura el período y el umbral de riesgo, luego presiona <strong>Ejecutar Análisis ML</strong> para detectar anomalías transaccionales en tu Caja Popular.</div>
+          </div>
+        </div>
+
+        <!-- Tabla de alertas (oculta inicialmente) -->
+        <div class="card" id="alertasCard" style="display:none;">
+          <div class="card-header">
+            <div class="card-title">🚨 Alertas PLD-ML — Ordenadas por Risk Score Descendente</div>
+          </div>
+          <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Risk Score</th>
+                  <th>Nivel</th>
+                  <th>Socio</th>
+                  <th>Tipo</th>
+                  <th>Monto ($MXN)</th>
+                  <th>Z-Score</th>
+                  <th>Promedio Hist.</th>
+                  <th>Fecha</th>
+                  <th>Sucursal</th>
+                  <th>Señales ML Activadas</th>
+                </tr>
+              </thead>
+              <tbody id="alertasBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DISTRIBUCIÓN -->
+      <div class="pld-panel" id="panel-distribucion">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🍩 Distribución de Alertas por Nivel de Riesgo</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chartDonut" height="220"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 Señales ML más Frecuentes</div></div>
+            <div class="card-body"><canvas id="chartSeniales" height="220"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: METODOLOGÍA -->
+      <div class="pld-panel" id="panel-metodologia">
+        <div class="card">
+          <div class="card-body" style="padding:24px;">
+            <h3 style="font-size:16px;font-weight:800;color:var(--color-gold);margin-bottom:16px;">🧬 Metodología del Motor PLD-ML</h3>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+              <div>
+                <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-primary);">📐 Algoritmo Z-Score + Baseline</h4>
+                <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;">El motor calcula el <strong>perfil conductual histórico</strong> de cada socio usando los últimos 12 meses de transacciones: monto promedio, desviación estándar y frecuencia habitual. Luego aplica el <strong>Z-Score estadístico</strong> para medir cuántas desviaciones estándar se aleja una transacción nueva del comportamiento esperado.</p>
+                <div style="background:var(--color-bg-surface);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;margin-top:10px;">
+                  Z = |valor − μ| / σ<br/>
+                  <span style="color:var(--text-muted);">μ = promedio histórico · σ = desviación estándar</span>
+                </div>
+              </div>
+              <div>
+                <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-primary);">🔑 Señales de Detección</h4>
+                <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                  <tr style="border-bottom:1px solid var(--color-border);">
+                    <th style="padding:6px;text-align:left;color:var(--text-muted);">Señal</th>
+                    <th style="padding:6px;text-align:center;color:var(--text-muted);">Puntos</th>
+                  </tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Monto Z > 3.0 (99.7%)</td><td style="padding:6px;text-align:center;color:#dc3545;font-weight:700;">+35</td></tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Monto Z > 2.0 (97.7%)</td><td style="padding:6px;text-align:center;color:#ff9900;font-weight:700;">+20</td></tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Umbral UIF ≥ $150,000 MXN</td><td style="padding:6px;text-align:center;color:#dc3545;font-weight:700;">+25</td></tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Estructuración / Smurfing</td><td style="padding:6px;text-align:center;color:#ff9900;font-weight:700;">+15</td></tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Frecuencia anómala Z > 2.0</td><td style="padding:6px;text-align:center;color:#ff9900;font-weight:700;">+10</td></tr>
+                  <tr><td style="padding:6px;color:var(--text-secondary);">Horario inusual (&lt;7am / &gt;10pm)</td><td style="padding:6px;text-align:center;color:var(--color-gold);font-weight:700;">+5</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:16px;">
+              <h4 style="font-size:13px;font-weight:700;color:var(--color-gold);margin-bottom:8px;">📜 Normativa Aplicable</h4>
+              <ul style="font-size:12px;color:var(--text-secondary);line-height:2;margin:0;padding-left:16px;">
+                <li><strong>LFPIORPI</strong> (Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita)</li>
+                <li><strong>Artículo 17</strong> — Obligación de reportar operaciones sospechosas a la UIF</li>
+                <li><strong>Umbral de reporte</strong>: Operaciones ≥ $7,500 USD (~$150,000 MXN al tipo de cambio de $20/USD)</li>
+                <li><strong>Formato ROS</strong>: Reporte de Operaciones Sospechosas en XML v2.0 para la CNBV</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username||'U').substring(0,2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+function toast(msg, type='info') {
+  const icons={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const el = document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>el.remove(), 4500);
+}
+function fmtMXN(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-MX') : '—'; }
+
+let chartDonut = null, chartSeniales = null;
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.pld-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.pld-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.pld-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+  });
+});
+
+// ── Actualizar URLs export ─────────────────────────────────────────────────
+function actualizarExports() {
+  const dias = document.getElementById('selDias').value;
+  const h = `Authorization=${encodeURIComponent('Bearer '+TOKEN)}`;
+  document.getElementById('btnXML').href = `/api/pld-ml/uif-xml?dias=${dias}`;
+  document.getElementById('btnCSV').href = `/api/pld-ml/uif-csv?dias=${dias}`;
+}
+document.getElementById('selDias').addEventListener('change', actualizarExports);
+actualizarExports();
+
+// ── Interceptar descarga con Authorization header ─────────────────────────
+['btnXML','btnCSV'].forEach(id => {
+  document.getElementById(id).addEventListener('click', async (e) => {
+    e.preventDefault();
+    const url = e.currentTarget.href;
+    toast('Generando reporte UIF...', 'info');
+    try {
+      const r = await fetch(url, { headers:{Authorization:`Bearer ${TOKEN}`} });
+      if (!r.ok) throw new Error('Error al generar');
+      const blob = await r.blob();
+      const fname = r.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
+                    || (id === 'btnXML' ? 'ROS_UIF.xml' : 'Reporte_UIF.csv');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      a.click();
+      toast(`Reporte ${fname} descargado`, 'success');
+    } catch(err) { toast('Error al descargar reporte', 'error'); }
+  });
+});
+
+// ── Ejecutar análisis ML ──────────────────────────────────────────────────
+document.getElementById('btnAnalizar').addEventListener('click', async () => {
+  const dias = document.getElementById('selDias').value;
+  const umbral = document.getElementById('inpUmbral').value;
+  const btn = document.getElementById('btnAnalizar');
+
+  btn.disabled = true;
+  btn.textContent = '⚙️ Analizando...';
+  document.getElementById('inicialCard').innerHTML = `
+    <div class="ml-running">
+      <div class="ml-spinner"></div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary);">Ejecutando Motor PLD-ML...</div>
+      <div style="font-size:12px;color:var(--text-muted);">Calculando baselines históricos · Aplicando Z-Score · Evaluando señales de riesgo</div>
+    </div>`;
+  document.getElementById('inicialCard').style.display = 'block';
+  document.getElementById('alertasCard').style.display = 'none';
+  document.getElementById('statsRow').style.display = 'none';
+  document.getElementById('resultTabs').style.display = 'none';
+
+  try {
+    const res = await fetch(`/api/pld-ml/analizar?dias=${dias}&umbral=${umbral}`, {
+      headers:{Authorization:`Bearer ${TOKEN}`}
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    renderResultados(data);
+    toast(`Análisis ML completado — ${data.alertas.length} alertas detectadas`, 'success');
+
+  } catch(err) {
+    document.getElementById('inicialCard').innerHTML = `<div class="ml-running"><div style="font-size:36px;">❌</div><div>Error: ${err.message}</div></div>`;
+    toast('Error en análisis ML: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🧠 Ejecutar Análisis ML';
+  }
+});
+
+// ── Renderizar Resultados ─────────────────────────────────────────────────
+function renderResultados(data) {
+  const { alertas, stats } = data;
+
+  // Stats
+  document.getElementById('statTxAnalizadas').textContent = (stats.totalTransaccionesAnalizadas||0).toLocaleString('es-MX');
+  document.getElementById('statPersonas').textContent = (stats.totalPersonasAnalizadas||0).toLocaleString('es-MX');
+  document.getElementById('statAlertas').textContent  = (stats.totalAlertasGeneradas||0).toLocaleString('es-MX');
+  document.getElementById('statAlto').textContent     = (stats.alertasAlto||0).toLocaleString('es-MX');
+  document.getElementById('statMonto').textContent    = fmtMXN(stats.montoPotencialRiesgo);
+  document.getElementById('statTiempo').textContent   = `${stats.tiempoAnalisisMs}ms`;
+  document.getElementById('statsRow').style.display   = 'grid';
+  document.getElementById('resultTabs').style.display = 'flex';
+
+  // Tabla de alertas
+  document.getElementById('inicialCard').style.display = 'none';
+  document.getElementById('alertasCard').style.display = 'block';
+
+  const senialLabels = {
+    montoAnomalo: '⚠️ Z-Score', frecuenciaAnomala: '🔄 Frecuencia',
+    montoCriticoUIF: '💰 Umbral UIF', estructuracion: '🔀 Estructuración',
+    horarioInusual: '🌙 Horario'
+  };
+
+  document.getElementById('alertasBody').innerHTML = alertas.length ? alertas.map(a => {
+    const nivel = a.nivelRiesgo === 'ALTO' ? 'risk-alto' : a.nivelRiesgo === 'MEDIO-ALTO' ? 'risk-medio-alto' : 'risk-medio';
+    const pct = a.riskScore;
+    const barColor = pct >= 80 ? '#dc3545' : pct >= 60 ? '#ff9900' : '#c9a84c';
+    const seniales = Object.entries(a.seniales||{}).map(([k,v]) =>
+      `<span class="senal-chip ${v?'senal-on':'senal-off'}">${v?'✓':'○'} ${senialLabels[k]||k}</span>`
+    ).join('');
+    return `<tr>
+      <td>
+        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+        <span style="font-weight:800;color:${barColor};">${pct}</span>
+      </td>
+      <td><span class="risk-badge ${nivel}">${a.nivelRiesgo}</span></td>
+      <td>
+        <div style="font-weight:700;font-size:13px;">${a.nombre || '—'}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${a.numSocio || '—'} · ${a.tipoPersona}</div>
+      </td>
+      <td style="font-size:11px;color:var(--text-secondary);">${a.tipoPersona}</td>
+      <td style="font-weight:800;color:#dc3545;">${fmtMXN(a.monto)}</td>
+      <td style="font-family:monospace;font-weight:700;color:${a.zScoreMonto>=3?'#dc3545':a.zScoreMonto>=2?'#ff9900':'var(--color-gold)'};">${a.zScoreMonto}σ</td>
+      <td style="font-size:12px;color:var(--text-secondary);">${fmtMXN(a.montoPromedioHistorico)}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${fmtDate(a.fecha)}<br/><span style="font-size:10px;">🕐 ${String(a.hora).padStart(2,'0')}:00h</span></td>
+      <td style="font-size:12px;">${a.sucursal || '—'}</td>
+      <td style="max-width:220px;">${seniales}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-muted);">✅ Sin alertas detectadas en este período con el umbral configurado</td></tr>`;
+
+  // Gráficas
+  renderCharts(stats, alertas);
+}
+
+// ── Gráficas ──────────────────────────────────────────────────────────────
+function renderCharts(stats, alertas) {
+  // Donut de distribución de riesgo
+  if (chartDonut) chartDonut.destroy();
+  const ctxD = document.getElementById('chartDonut').getContext('2d');
+  chartDonut = new Chart(ctxD, {
+    type: 'doughnut',
+    data: {
+      labels: ['Riesgo ALTO', 'Riesgo MEDIO-ALTO', 'Riesgo MEDIO'],
+      datasets: [{
+        data: [stats.alertasAlto, stats.alertasMedioAlto, stats.alertasMedio],
+        backgroundColor: ['#dc354590','#ff990090','#c9a84c90'],
+        borderColor: ['#dc3545','#ff9900','#c9a84c'],
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, cutout: '60%',
+      plugins: {
+        legend:{ labels:{ color:'#a0aec0', font:{size:11} } },
+        tooltip:{ backgroundColor:'#1a2035' }
+      }
+    }
+  });
+
+  // Barras de señales
+  const senConteo = { montoAnomalo:0, frecuenciaAnomala:0, montoCriticoUIF:0, estructuracion:0, horarioInusual:0 };
+  alertas.forEach(a => { Object.entries(a.seniales||{}).forEach(([k,v]) => { if(v) senConteo[k]++; }); });
+  if (chartSeniales) chartSeniales.destroy();
+  const ctxS = document.getElementById('chartSeniales').getContext('2d');
+  chartSeniales = new Chart(ctxS, {
+    type: 'bar',
+    data: {
+      labels: ['Z-Score Monto','Frecuencia','Umbral UIF','Estructuración','Horario Inusual'],
+      datasets: [{
+        label: 'Alertas con señal',
+        data: Object.values(senConteo),
+        backgroundColor: ['#dc354580','#ff990080','#c9a84c80','#9b59b680','#1e88b080'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ color:'#a0aec0', font:{size:10} }, grid:{color:'rgba(255,255,255,.04)'} },
+        y:{ ticks:{ color:'#a0aec0' }, grid:{color:'rgba(255,255,255,.04)'} }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

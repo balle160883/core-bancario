@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot IA Financiero — Core Bancario SIF</title>
+  <meta name="description" content="Asistente de Inteligencia Artificial para análisis financiero en tiempo real de la Caja Popular" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Layout del Copilot ── */
+    .copilot-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0;
+      height: calc(100vh - 70px);
+      overflow: hidden;
+    }
+    @media (max-width: 900px) { .copilot-layout { grid-template-columns: 1fr; } }
+
+    /* ── Panel lateral de sugerencias ── */
+    .sugerencias-panel {
+      background: var(--color-bg-surface);
+      border-right: 1px solid var(--color-border);
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+    .sug-title {
+      padding: 0 16px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+    .sug-cat {
+      padding: 6px 16px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .sug-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 16px; cursor: pointer; transition: var(--transition);
+      border-left: 3px solid transparent; font-size: 12.5px; color: var(--text-secondary);
+    }
+    .sug-item:hover {
+      background: rgba(255,255,255,0.05);
+      border-left-color: var(--color-primary-light);
+      color: var(--text-primary);
+    }
+    .sug-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Zona de chat ── */
+    .chat-container {
+      display: flex; flex-direction: column; height: 100%; overflow: hidden;
+    }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 24px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .chat-input-area {
+      padding: 16px 24px;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg-card);
+    }
+    .chat-input-wrap {
+      display: flex; gap: 12px; align-items: flex-end;
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 16px; padding: 12px 16px;
+      transition: var(--transition);
+    }
+    .chat-input-wrap:focus-within {
+      border-color: var(--color-primary-light);
+      box-shadow: 0 0 0 3px rgba(30,136,176,0.15);
+    }
+    .chat-input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text-primary); font-size: 14px; font-family: 'Inter', sans-serif;
+      resize: none; line-height: 1.5; max-height: 120px;
+    }
+    .chat-input::placeholder { color: var(--text-muted); }
+    .chat-send-btn {
+      background: var(--color-primary); border: none; border-radius: 10px;
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: var(--transition); flex-shrink: 0; font-size: 16px;
+    }
+    .chat-send-btn:hover { background: var(--color-primary-light); transform: scale(1.05); }
+    .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Mensajes ── */
+    .msg-user {
+      display: flex; justify-content: flex-end;
+    }
+    .msg-bubble-user {
+      background: var(--color-primary);
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 18px; max-width: 70%;
+      font-size: 14px; color: #ffffff; line-height: 1.5;
+    }
+    .msg-bot { display: flex; gap: 12px; align-items: flex-start; }
+    .bot-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #c9a84c, #1e88b0);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; margin-top: 4px;
+    }
+    .bot-content { flex: 1; min-width: 0; }
+
+    /* ── Cards de respuesta ── */
+    .resp-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .resp-header {
+      padding: 14px 18px; background: var(--color-bg-surface);
+      border-bottom: 1px solid var(--color-border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .resp-title { font-size: 14px; font-weight: 700; }
+    .resp-time { font-size: 11px; color: var(--text-muted); }
+    .resp-summary {
+      padding: 12px 18px; font-size: 13px; color: var(--text-secondary);
+      border-bottom: 1px solid var(--color-border);
+      line-height: 1.6;
+    }
+    .resp-summary strong { color: var(--color-gold); }
+
+    /* ── Tabla de respuesta ── */
+    .resp-table-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+    .resp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .resp-table th {
+      padding: 9px 12px; background: rgba(255,255,255,0.03);
+      color: var(--text-secondary); font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid var(--color-border); white-space: nowrap; text-align: left;
+    }
+    .resp-table td {
+      padding: 9px 12px; border-bottom: 1px solid var(--color-border-light);
+      color: var(--text-primary); white-space: nowrap;
+    }
+    .resp-table tr:last-child td { border-bottom: none; }
+    .resp-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+    /* ── KPIs de respuesta ── */
+    .resp-kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; padding: 16px;
+    }
+    .resp-kpi {
+      background: var(--color-bg-surface); border-radius: 10px;
+      padding: 14px; text-align: center; border: 1px solid var(--color-border-light);
+    }
+    .resp-kpi-icon { font-size: 22px; margin-bottom: 6px; }
+    .resp-kpi-val { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .resp-kpi-lbl { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+    .color-azul .resp-kpi-val { color: var(--color-primary-light); }
+    .color-verde .resp-kpi-val { color: #28a745; }
+    .color-rojo .resp-kpi-val { color: #dc3545; }
+    .color-morado .resp-kpi-val { color: #9b59b6; }
+    .color-amarillo .resp-kpi-val { color: var(--color-gold); }
+
+    /* ── Gráfica ── */
+    .resp-chart { padding: 16px; max-height: 300px; position: relative; }
+
+    /* ── Chips de sugerencias en chat ── */
+    .sug-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px; }
+    .sug-chip {
+      background: var(--color-bg-surface); border: 1px solid var(--color-border);
+      border-radius: 20px; padding: 6px 14px; font-size: 12px;
+      cursor: pointer; transition: var(--transition); color: var(--text-secondary);
+    }
+    .sug-chip:hover { border-color: var(--color-primary-light); color: var(--color-primary-light); }
+
+    /* ── Estado cargando ── */
+    .typing-dots { display: flex; gap: 4px; padding: 14px 18px; align-items: center; }
+    .typing-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-primary-light); animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%,80%,100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-6px); opacity: 1; } }
+
+    /* ── Badge de atraso ── */
+    .badge-atraso { background: #dc354520; color: #dc3545; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+    .badge-vigente { background: #28a74520; color: #28a745; padding: 2px 8px; border-radius: 12px; }
+    .badge-mora { background: #dc354520; color: #dc3545; padding: 2px 8px; border-radius: 12px; }
+
+    /* ── Bienvenida inicial ── */
+    .welcome-msg {
+      text-align: center; padding: 40px 20px; color: var(--text-secondary);
+    }
+    .welcome-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+    .welcome-title { font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; }
+    .welcome-sub { font-size: 14px; margin-bottom: 28px; }
+    .welcome-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto; }
+    .welcome-chip {
+      background: var(--color-bg-card); border: 1px solid var(--color-border);
+      border-radius: 20px; padding: 8px 16px; font-size: 12.5px;
+      cursor: pointer; transition: var(--transition); color: var(--text-secondary);
+      text-align: left;
+    }
+    .welcome-chip:hover { border-color: var(--color-gold); color: var(--color-gold); transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR PRINCIPAL -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="/copilot.html" class="nav-item active"><span class="nav-icon">🤖</span><span class="nav-label">Copilot IA</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/cierre.html" class="nav-item"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content" style="display:flex;flex-direction:column;overflow:hidden;">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#1e88b0);display:flex;align-items:center;justify-content:center;font-size:18px;">🤖</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;">Copilot Financiero IA</div>
+          <div style="font-size:11px;color:var(--color-gold);">● Conectado a BD SIF en tiempo real</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" id="btnLimpiar">🗑️ Limpiar chat</button>
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="copilot-layout">
+      <!-- Panel de sugerencias -->
+      <div class="sugerencias-panel" id="sugerenciasPanel">
+        <div class="sug-title">💡 Preguntas sugeridas</div>
+        <div id="sugList">
+          <div style="padding:20px;text-align:center;color:var(--text-muted);">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- Área de chat -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <!-- Mensaje de bienvenida -->
+          <div class="welcome-msg" id="welcomeMsg">
+            <span class="welcome-icon">🤖</span>
+            <div class="welcome-title">Copilot Financiero con IA</div>
+            <div class="welcome-sub">Pregúntame cualquier cosa sobre tu Caja Popular.<br>Analizo la base de datos SIF en tiempo real y respondo con tablas y gráficas.</div>
+            <div class="welcome-chips" id="welcomeChips"></div>
+          </div>
+        </div>
+
+        <!-- Input de pregunta -->
+        <div class="chat-input-area">
+          <div class="chat-input-wrap">
+            <textarea
+              class="chat-input"
+              id="chatInput"
+              placeholder="Escribe tu pregunta en lenguaje natural... ej: '¿Cuáles son los 5 socios con mayor mora?'"
+              rows="1"
+            ></textarea>
+            <button class="chat-send-btn" id="sendBtn" title="Enviar pregunta">➤</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center;">
+            Presiona <kbd style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:4px;padding:1px 5px;">Enter</kbd> para enviar · 
+            <kbd style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:4px;padding:1px 5px;">Shift+Enter</kbd> para nueva línea
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0,2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+document.getElementById('btnLimpiar').addEventListener('click', limpiarChat);
+
+let chartInstances = {};
+let msgCount = 0;
+
+// ── Utilidades ────────────────────────────────────────────────────────────
+function fmtMXN(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-MX') : '—'; }
+function fmtNum(n) { return (parseFloat(n)||0).toLocaleString('es-MX'); }
+function markdownBold(t) { return (t||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>'); }
+
+function formatCell(val, fmt) {
+  switch(fmt) {
+    case 'moneda': return `<span style="color:#28a745;font-weight:700;">${fmtMXN(val)}</span>`;
+    case 'fecha': return fmtDate(val);
+    case 'numero': return fmtNum(val);
+    case 'porcentaje': return `${(parseFloat(val)||0).toFixed(2)}%`;
+    case 'numero_atraso': return val > 0
+      ? `<span class="badge-atraso">🔴 ${val} días</span>`
+      : `<span class="badge-vigente">✅ Al corriente</span>`;
+    case 'estado_credito': return val === 'Vigente'
+      ? `<span class="badge-vigente">✅ Vigente</span>`
+      : `<span class="badge-mora">⚠️ Mora</span>`;
+    default: return `<span>${val || '—'}</span>`;
+  }
+}
+
+function toast(msg, type='info') {
+  const icons = {success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── Cargar sugerencias ────────────────────────────────────────────────────
+async function cargarSugerencias() {
+  try {
+    const res = await fetch('/api/copilot/sugerencias', {
+      headers: { Authorization: `Bearer ${TOKEN}` }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const cats = {};
+    data.sugerencias.forEach(s => {
+      if (!cats[s.categoria]) cats[s.categoria] = [];
+      cats[s.categoria].push(s);
+    });
+
+    let html = '';
+    for (const [cat, items] of Object.entries(cats)) {
+      html += `<div class="sug-cat">${cat}</div>`;
+      items.forEach(s => {
+        html += `<div class="sug-item" onclick="preguntarDesde('${s.texto.replace(/'/g,"\\'")}')">
+          <span class="sug-icon">${s.icono}</span>
+          <span>${s.texto}</span>
+        </div>`;
+      });
+    }
+    document.getElementById('sugList').innerHTML = html;
+
+    // Chips de bienvenida
+    document.getElementById('welcomeChips').innerHTML = data.sugerencias.slice(0,6).map(s =>
+      `<button class="welcome-chip" onclick="preguntarDesde('${s.texto.replace(/'/g,"\\'")}')">${s.icono} ${s.texto}</button>`
+    ).join('');
+  } catch(e) {}
+}
+
+// ── Enviar pregunta ───────────────────────────────────────────────────────
+async function enviarPregunta(pregunta) {
+  if (!pregunta.trim()) return;
+  document.getElementById('welcomeMsg')?.remove();
+  document.getElementById('chatInput').value = '';
+
+  // Burbuja del usuario
+  appendUserMsg(pregunta);
+  // Typing indicator
+  const typingId = appendTyping();
+
+  try {
+    const res = await fetch('/api/copilot/preguntar', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pregunta })
+    });
+    const data = await res.json();
+    removeTyping(typingId);
+
+    if (data.success) {
+      appendBotMsg(data.respuesta, data.tiempoMs);
+    } else {
+      appendErrorMsg('Error al procesar tu pregunta. Intenta de nuevo.');
+    }
+  } catch(e) {
+    removeTyping(typingId);
+    appendErrorMsg('No se pudo conectar con el servidor. Verifica tu conexión.');
+  }
+}
+
+function preguntarDesde(texto) {
+  document.getElementById('chatInput').value = texto;
+  enviarPregunta(texto);
+}
+
+// ── Renderizadores de mensajes ─────────────────────────────────────────────
+function appendUserMsg(texto) {
+  const msgs = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'msg-user';
+  el.innerHTML = `<div class="msg-bubble-user">${texto}</div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendTyping() {
+  const id = 'typing_' + Date.now();
+  const msgs = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'msg-bot'; el.id = id;
+  el.innerHTML = `
+    <div class="bot-avatar">🤖</div>
+    <div class="resp-card" style="min-width:120px;">
+      <div class="typing-dots">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>
+    </div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  document.getElementById(id)?.remove();
+}
+
+function appendErrorMsg(texto) {
+  const msgs = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'msg-bot';
+  el.innerHTML = `
+    <div class="bot-avatar">🤖</div>
+    <div class="resp-card">
+      <div class="resp-header"><span class="resp-title">❌ Error</span></div>
+      <div class="resp-summary">${texto}</div>
+    </div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendBotMsg(respuesta, tiempoMs) {
+  const msgs = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'msg-bot';
+  const cId = `chart_${++msgCount}`;
+  const html = renderRespuesta(respuesta, cId, tiempoMs);
+  el.innerHTML = `<div class="bot-avatar">🤖</div><div class="bot-content">${html}</div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Renderizar gráfica si aplica
+  setTimeout(() => renderChart(respuesta, cId), 100);
+}
+
+// ── Renderizador de respuesta ─────────────────────────────────────────────
+function renderRespuesta(r, cId, ms) {
+  const header = `
+    <div class="resp-header">
+      <span class="resp-title">${r.titulo || 'Respuesta'}</span>
+      <span class="resp-time">⚡ ${ms}ms</span>
+    </div>`;
+
+  const summary = r.resumen
+    ? `<div class="resp-summary">${markdownBold(r.resumen)}</div>`
+    : '';
+
+  let body = '';
+
+  // ── Tipo: KPIs
+  if (r.tipo === 'kpis') {
+    body = `<div class="resp-kpis">${(r.kpis||[]).map(k => `
+      <div class="resp-kpi color-${k.color}">
+        <div class="resp-kpi-icon">${k.icono}</div>
+        <div class="resp-kpi-val">${k.valor}</div>
+        <div class="resp-kpi-lbl">${k.label}</div>
+      </div>`).join('')}</div>`;
+
+  // ── Tipo: Tabla
+  } else if (r.tipo === 'tabla') {
+    const cols = r.columnas || [];
+    const fmts = r.formato || [];
+    const filas = r.filas || [];
+    body = `<div class="resp-table-wrap">
+      <table class="resp-table">
+        <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${filas.length
+          ? filas.map(f=>`<tr>${Object.values(f).map((v,i)=>`<td>${formatCell(v,fmts[i]||'texto')}</td>`).join('')}</tr>`).join('')
+          : `<tr><td colspan="${cols.length}" style="text-align:center;padding:20px;color:var(--text-muted);">Sin resultados</td></tr>`
+        }</tbody>
+      </table>
+    </div>`;
+
+  // ── Tipo: Gráficas
+  } else if (['grafica_linea','grafica_barras','grafica_dona'].includes(r.tipo)) {
+    body = `<div class="resp-chart"><canvas id="${cId}" height="200"></canvas></div>`;
+    if (r.tabla && r.columnas) {
+      const cols = r.columnas || [];
+      const fmts = r.formato || [];
+      body += `<div class="resp-table-wrap" style="max-height:200px;">
+        <table class="resp-table">
+          <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${r.tabla.map(f=>`<tr>${Object.values(f).map((v,i)=>`<td>${formatCell(v,fmts[i]||'texto')}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    }
+
+  // ── Tipo: Mensaje/Sugerencias
+  } else if (r.tipo === 'mensaje') {
+    body = `<div class="resp-summary" style="padding:16px;white-space:pre-line;">${r.mensaje || ''}</div>`;
+    if (r.sugerencias) {
+      body += `<div class="sug-chips">${r.sugerencias.map(s=>
+        `<button class="sug-chip" onclick="preguntarDesde('${s.replace(/'/g,"\\'")}')">💬 ${s}</button>`
+      ).join('')}</div>`;
+    }
+  }
+
+  return `<div class="resp-card">${header}${summary}${body}</div>`;
+}
+
+// ── Renderizar gráficas Chart.js ──────────────────────────────────────────
+function renderChart(r, cId) {
+  const canvas = document.getElementById(cId);
+  if (!canvas) return;
+  if (chartInstances[cId]) { chartInstances[cId].destroy(); }
+
+  const colores = [
+    '#1e88b0','#c9a84c','#28a745','#dc3545','#9b59b6',
+    '#e67e22','#16a085','#2980b9','#8e44ad','#c0392b'
+  ];
+
+  const baseConfig = {
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: '#a0aec0', font: { family:'Inter',size:11 } } },
+        tooltip: { backgroundColor: '#1a2035', titleColor:'#fff', bodyColor:'#a0aec0' }
+      },
+      scales: {
+        x: { ticks: { color:'#a0aec0', font:{size:11} }, grid: { color:'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color:'#a0aec0', font:{size:11}, callback: v => '$'+Number(v).toLocaleString('es-MX') }, grid: { color:'rgba(255,255,255,0.05)' } }
+      }
+    }
+  };
+
+  if (r.tipo === 'grafica_linea') {
+    chartInstances[cId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: r.labels,
+        datasets: [{ label: r.etiqueta, data: r.datos, borderColor: '#1e88b0', backgroundColor: 'rgba(30,136,176,0.15)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#1e88b0' }]
+      },
+      options: baseConfig.options
+    });
+  } else if (r.tipo === 'grafica_barras') {
+    chartInstances[cId] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: r.labels,
+        datasets: [{ label: r.etiqueta, data: r.datos, backgroundColor: r.labels.map((_,i)=>colores[i%colores.length]+'CC'), borderRadius: 6 }]
+      },
+      options: { ...baseConfig.options }
+    });
+  } else if (r.tipo === 'grafica_dona') {
+    const donaOpts = JSON.parse(JSON.stringify(baseConfig.options));
+    delete donaOpts.scales;
+    chartInstances[cId] = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: r.labels,
+        datasets: [{ data: r.datos, backgroundColor: r.labels.map((_,i)=>colores[i%colores.length]), borderWidth: 2, borderColor: '#141928' }]
+      },
+      options: { ...donaOpts, cutout: '60%' }
+    });
+  }
+}
+
+// ── Input handlers ──────────────────────────────────────────────────────────
+const input = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    enviarPregunta(input.value);
+  }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+sendBtn.addEventListener('click', () => enviarPregunta(input.value));
+
+function limpiarChat() {
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML = '';
+  Object.keys(chartInstances).forEach(k => { chartInstances[k]?.destroy(); delete chartInstances[k]; });
+  // Restaurar bienvenida
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome-msg'; welcome.id = 'welcomeMsg';
+  welcome.innerHTML = `
+    <span class="welcome-icon">🤖</span>
+    <div class="welcome-title">Copilot Financiero con IA</div>
+    <div class="welcome-sub">Pregúntame cualquier cosa sobre tu Caja Popular.</div>
+    <div class="welcome-chips" id="welcomeChips"></div>`;
+  msgs.appendChild(welcome);
+  cargarSugerencias();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+cargarSugerencias();
+</script>
+</body>
+</html>

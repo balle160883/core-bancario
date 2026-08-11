@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inversiones & Pagarés — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .inv-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 1000px) { .inv-grid { grid-template-columns: 1fr; } }
+    .gat-card {
+      background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(30,136,176,0.15));
+      border: 1px solid var(--color-gold); border-radius: var(--radius-md);
+      padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 20px;
+    }
+    .gat-val { font-size: 24px; font-weight: 800; color: var(--color-gold); }
+    .gat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Modal Certificado Impresible */
+    .cert-backdrop {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .cert-backdrop.open { display: flex; }
+    .cert-box {
+      background: #ffffff; color: #000000;
+      font-family: 'Times New Roman', Times, serif;
+      width: 600px; padding: 32px; border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 4px double #000;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item active"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Inversiones a Plazo Fijo (PRLV / DPF)</h2>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Inversiones</span></div>
+        <h1>Pagarés con Rendimiento Liquidable al Vencimiento</h1>
+        <p>Simulador de rendimientos con cálculo oficial de GAT Nominal, GAT Real y retención de ISR (Normativa CONDUSEF)</p>
+      </div>
+
+      <div class="inv-grid">
+        <!-- SIMULADOR -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🧮 Simular Inversión a Plazo Fijo</div></div>
+          <div class="card-body">
+            <form id="formInversion">
+              <div class="form-group">
+                <label class="form-label">Monto de Inversión ($ MXN)</label>
+                <input type="number" class="form-control" id="invMonto" value="100000" min="1000" step="5000" style="font-size:20px;font-weight:800;color:var(--color-gold);" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Plazo de Inversión (Días)</label>
+                <select class="form-control" id="invPlazo" style="font-weight:700;">
+                  <option value="28">28 Días — (Tasa 8.50% anual)</option>
+                  <option value="91">91 Días — (Tasa 9.75% anual)</option>
+                  <option value="182">182 Días — (Tasa 11.00% anual)</option>
+                  <option value="360" selected>360 Días — (Tasa 12.50% anual)</option>
+                </select>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group">
+                  <label class="form-label">Retención ISR Anual (%)</label>
+                  <input type="number" class="form-control" id="invIsr" value="0.50" step="0.05" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Inflación Estimada (%)</label>
+                  <input type="number" class="form-control" id="invInf" value="4.00" step="0.1" required />
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-gold" style="width:100%;padding:14px;font-size:15px;">📊 Calcular Rendimiento & GAT</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- RESULTADOS CONDUSEF -->
+        <div>
+          <!-- Tarjeta GAT -->
+          <div class="gat-card">
+            <div>
+              <div class="gat-lbl">GAT NOMINAL</div>
+              <div class="gat-val" id="resGatNominal">13.24%</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Antes de impuestos</div>
+            </div>
+            <div>
+              <div class="gat-lbl">GAT REAL</div>
+              <div class="gat-val" id="resGatReal" style="color:#28a745;">8.88%</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Descontando inflación</div>
+            </div>
+          </div>
+
+          <!-- Resumen de rendimientos -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">💵 Desglose de Rendimiento al Vencimiento</div></div>
+            <div class="card-body" style="padding:16px;">
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-light);">
+                <span style="color:var(--text-secondary);">Interés Bruto Generado:</span>
+                <strong id="resIntBruto" style="color:var(--color-gold);">$0.00</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-light);">
+                <span style="color:var(--text-secondary);">Retención ISR (SAT):</span>
+                <strong id="resRetIsr" style="color:#dc3545;">-$0.00</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-light);">
+                <span style="color:var(--text-secondary);">Ganancia Neta a Recibir:</span>
+                <strong id="resIntNeto" style="color:#28a745;font-weight:800;">$0.00</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:12px 0 0 0;font-size:18px;margin-top:6px;">
+                <span style="font-weight:700;">Total al Vencimiento:</span>
+                <strong id="resTotalVenc" style="color:var(--text-primary);">$0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- FORMULARIO DE APERTURA -->
+          <div class="card" style="margin-top:20px;">
+            <div class="card-header"><div class="card-title">📝 Emitir Pagaré / Certificado de Inversión</div></div>
+            <div class="card-body">
+              <form id="formAperturaInv">
+                <div class="form-group">
+                  <label class="form-label">ID / Folio del Socio Titular</label>
+                  <input type="number" class="form-control" id="invSocioId" value="763612" placeholder="Ej: 763612" required />
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">📜 Registrar Pagaré y Generar Constancia</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVERSIONES VIGENTES -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📈 Certificados de Inversión Vigentes en la Caja Popular</div></div>
+        <div class="card-body" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Folio Certificado</th>
+                <th>Socio Titular</th>
+                <th>No. Socio</th>
+                <th>Monto Invertido</th>
+                <th>Fecha Apertura</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaVigentes">
+              <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando inversiones...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL CERTIFICADO IMPRESIBLE -->
+<div class="cert-backdrop" id="certModal">
+  <div class="cert-box">
+    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;">
+      <h2 style="margin:0;font-size:22px;letter-spacing:1px;">PAGARÉ CON RENDIMIENTO LIQUIDABLE AL VENCIMIENTO</h2>
+      <div style="font-size:12px;font-weight:bold;margin-top:4px;">CAJA POPULAR SIF — REGULADA POR CONDUSEF Y CNBV</div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:16px;">
+      <div><strong>FOLIO CERTIFICADO:</strong> <span id="ckFolio">INV-00000</span></div>
+      <div><strong>FECHA EMISIÓN:</strong> <span id="ckFecha">00/00/0000</span></div>
+    </div>
+
+    <p style="text-align:justify;font-size:13px;line-height:1.5;">
+      Por medio del presente título de crédito, la entidad reconoce haber recibido de 
+      <strong id="ckSocio">NOMBRE DEL SOCIO</strong> (Socio No. <span id="ckNumSocio">00-0000</span>),
+      la cantidad de <strong id="ckMonto">$0.00 MXN</strong>, misma que se obliga a pagar incondicionalmente al vencimiento de un plazo de <strong id="ckPlazo">00 días</strong> junto con los rendimientos correspondientes.
+    </p>
+
+    <div style="margin:20px 0;border:1px solid #000;padding:12px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div><strong>TASA ANUAL BRUTA:</strong> <span id="ckTasa">0.00%</span></div>
+      <div><strong>GAT NOMINAL:</strong> <span id="ckGatN">0.00%</span></div>
+      <div><strong>GAT REAL:</strong> <span id="ckGatR">0.00%</span></div>
+      <div><strong>RETENCIÓN ISR:</strong> <span id="ckIsr">$0.00</span></div>
+    </div>
+
+    <div style="margin-top:40px;display:flex;justify-content:space-around;text-align:center;font-size:11px;">
+      <div>
+        __________________________________<br />
+        FIRMA DEL SOCIO INVERSIONISTA
+      </div>
+      <div>
+        __________________________________<br />
+        DIRECTOR GENERAL / APODERADO
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:24px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Pagaré</button>
+      <button class="btn btn-outline" onclick="document.getElementById('certModal').classList.remove('open')">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401) { localStorage.clear(); window.location.href = '/'; }
+  return r.json();
+}
+function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-MX') : '—'; }
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Simular Inversión
+document.getElementById('formInversion').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    monto: parseFloat(document.getElementById('invMonto').value),
+    dias: parseInt(document.getElementById('invPlazo').value),
+    tasaIsrAnual: parseFloat(document.getElementById('invIsr').value),
+    inflacionEstimada: parseFloat(document.getElementById('invInf').value),
+  };
+
+  try {
+    const res = await api('/api/inversiones/simular', 'POST', body);
+    if (!res.success) { toast('Error en simulación', 'error'); return; }
+
+    const c = res.calculo;
+    document.getElementById('resGatNominal').textContent = c.gatNominal + '%';
+    document.getElementById('resGatReal').textContent    = c.gatReal + '%';
+    document.getElementById('resIntBruto').textContent   = fmt(c.interesBruto);
+    document.getElementById('resRetIsr').textContent     = '-' + fmt(c.retencionIsr);
+    document.getElementById('resIntNeto').textContent    = fmt(c.interesNeto);
+    document.getElementById('resTotalVenc').textContent  = fmt(c.montoTotalVencimiento);
+  } catch (e) { toast('Error al calcular rendimiento', 'error'); }
+});
+
+// Apertura Pagaré
+document.getElementById('formAperturaInv').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    socioId: parseInt(document.getElementById('invSocioId').value),
+    monto: parseFloat(document.getElementById('invMonto').value),
+    dias: parseInt(document.getElementById('invPlazo').value),
+  };
+
+  try {
+    const res = await api('/api/inversiones/aperturar', 'POST', body);
+    if (res.success) {
+      toast('Certificado de Inversión aperturado exitosamente', 'success');
+      loadVigentes();
+      
+      // Mostrar Certificado impresible
+      document.getElementById('ckFolio').textContent = res.inversion.folio;
+      document.getElementById('ckFecha').textContent = fmtDate(res.inversion.fechaApertura);
+      document.getElementById('ckMonto').textContent = fmt(res.inversion.monto);
+      document.getElementById('ckPlazo').textContent = res.inversion.plazoDias + ' días';
+      document.getElementById('certModal').classList.add('open');
+    }
+  } catch (e) { toast('Error en apertura', 'error'); }
+});
+
+// Cargar Inversiones Vigentes
+async function loadVigentes() {
+  try {
+    const res = await api('/api/inversiones/vigentes');
+    if (res.success) {
+      document.getElementById('tablaVigentes').innerHTML = res.data.length ? res.data.map(inv => `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--color-gold);">${inv.Folio || '#' + inv.CertificadoId}</td>
+          <td style="font-weight:600;">${inv.Socio || '—'}</td>
+          <td style="font-family:monospace;font-size:12px;color:var(--text-secondary);">${inv.NumSocio || '—'}</td>
+          <td style="font-weight:700;color:#28a745;font-size:15px;">${fmt(inv.MontoInvertido)}</td>
+          <td style="font-size:12px;color:var(--text-muted);">${fmtDate(inv.FechaApertura)}</td>
+          <td><span class="badge badge-success">Vigente</span></td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" style="text-align:center;padding:30px;">Sin certificados de inversión vigentes</td></tr>`;
+    }
+  } catch (e) {}
+}
+
+loadVigentes();
+document.getElementById('formInversion').dispatchEvent(new Event('submit'));
+</script>
+</body>
+</html>

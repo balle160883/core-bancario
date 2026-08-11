@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Originación & Scoring — Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .orig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
+    @media (max-width: 1100px) { .orig-grid { grid-template-columns: 1fr; } }
+    .sim-resumen {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 20px;
+    }
+    .sim-val { font-size: 20px; font-weight: 800; color: var(--color-gold); }
+    .sim-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; }
+    .scoring-box {
+      border-radius: var(--radius-md); padding: 20px;
+      margin-bottom: 20px; border: 1px solid var(--color-border);
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    }
+    .score-circle {
+      width: 70px; height: 70px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .exp-tabs { display: flex; border-bottom: 1px solid var(--color-border); background: var(--color-bg-surface); }
+    .exp-tab {
+      padding: 12px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none;
+      background: none; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: var(--transition);
+    }
+    .exp-tab.active { color: var(--color-primary-light); border-bottom-color: var(--color-primary-light); }
+    .exp-panel { display: none; padding: 24px 0; }
+    .exp-panel.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html" class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/credito.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item active"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html" class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/reportes.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <h2 class="topbar-title">Originación Digital de Crédito</h2>
+      <div class="topbar-actions">
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>Originación</span></div>
+        <h1>Módulo de Originación & Scoring Paramétrico</h1>
+        <p>Simulación interactiva, calificación de riesgo crediticio y formalización de solicitudes para el Comité</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="exp-tabs" style="border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;">
+        <button class="exp-tab active" data-tab="simulador">🧮 Simulador de Crédito</button>
+        <button class="exp-tab" data-tab="scoring">📊 Evaluar Socio (Scoring)</button>
+        <button class="exp-tab" data-tab="comite">🏛️ Mesa de Aprobación Comité</button>
+      </div>
+
+      <!-- TAB 1: SIMULADOR -->
+      <div class="exp-panel active" id="panel-simulador">
+        <div class="orig-grid">
+          <!-- Formulario simulador -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">⚙️ Parámetros del Crédito</div></div>
+            <div class="card-body">
+              <form id="formSimulador">
+                <div class="form-group">
+                  <label class="form-label">Producto de Crédito</label>
+                  <select class="form-control" id="simProducto" required>
+                    <option value="">Cargando productos...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Monto Solicitado ($ MXN)</label>
+                  <input type="number" class="form-control" id="simMonto" value="50000" min="1000" step="1000" required />
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                  <div class="form-group">
+                    <label class="form-label">Plazo (Meses)</label>
+                    <input type="number" class="form-control" id="simPlazo" value="12" min="1" max="72" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Frecuencia de Pago</label>
+                    <select class="form-control" id="simFrecuencia">
+                      <option value="Mensual" selected>Mensual</option>
+                      <option value="Quincenal">Quincenal</option>
+                      <option value="Semanal">Semanal</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                  <div class="form-group">
+                    <label class="form-label">Tasa Anual (%)</label>
+                    <input type="number" class="form-control" id="simTasa" value="24.0" step="0.1" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tasa IVA (%)</label>
+                    <input type="number" class="form-control" id="simIva" value="16.0" step="0.1" required />
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">🧮 Calcular Amortizaciones</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Resumen de cálculo -->
+          <div>
+            <div class="sim-resumen">
+              <div>
+                <div class="sim-lbl">Cuota Estimada</div>
+                <div class="sim-val" id="resCuota" style="color:#28a745;">$0.00</div>
+              </div>
+              <div>
+                <div class="sim-lbl">Total Interés</div>
+                <div class="sim-val" id="resInteres" style="color:var(--color-gold);">$0.00</div>
+              </div>
+              <div>
+                <div class="sim-lbl">CAT Estimado</div>
+                <div class="sim-val" id="resCAT" style="color:var(--color-primary-light);">0.0%</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title">📋 Resumen Financiero de Simulación</div></div>
+              <div class="card-body" style="padding:16px;">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-border-light);">
+                  <span style="color:var(--text-secondary);">Monto Solicitado:</span>
+                  <strong id="resMonto">$0.00</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-border-light);">
+                  <span style="color:var(--text-secondary);">Total IVA Intereses:</span>
+                  <strong id="resIva">$0.00</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;margin-top:8px;">
+                  <span style="font-weight:700;">Costo Total del Crédito:</span>
+                  <strong id="resTotal" style="color:var(--color-gold);">$0.00</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Amortización generada -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">📅 Proyección de Tabla de Amortización</div></div>
+          <div class="card-body" style="padding:0;max-height:400px;overflow-y:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>No. Pago</th>
+                  <th>Fecha Vencimiento</th>
+                  <th>Capital</th>
+                  <th>Interés</th>
+                  <th>IVA</th>
+                  <th>Pago Total</th>
+                  <th>Saldo Pendiente</th>
+                </tr>
+              </thead>
+              <tbody id="tablaSimulacion">
+                <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Ingresa los parámetros y presiona calcular</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SCORING & SOLICITUD -->
+      <div class="exp-panel" id="panel-scoring">
+        <div class="orig-grid">
+          <!-- Búsqueda y Evaluación -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">🔍 Identificar Socio a Evaluar</div></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">ID de Socio / Búsqueda</label>
+                <div style="display:flex;gap:10px;">
+                  <input type="number" class="form-control" id="scoringSocioId" placeholder="Ingresa ID del socio (Ej: 763612)" value="763612" />
+                  <button class="btn btn-primary" onclick="evaluarScoring()">🎯 Evaluar</button>
+                </div>
+              </div>
+
+              <!-- Resultado Scoring -->
+              <div id="scoringResult" style="display:none;margin-top:20px;">
+                <div class="scoring-box" id="scoreBox">
+                  <div>
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Dictamen Paramétrico</div>
+                    <div style="font-size:18px;font-weight:800;margin-top:4px;" id="scoreDictamen">APROBACIÓN AUTOMÁTICA</div>
+                    <div style="font-size:13px;color:var(--text-secondary);" id="scoreSocioNombre">—</div>
+                  </div>
+                  <div class="score-circle" id="scoreCircle">85</div>
+                </div>
+
+                <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;">📌 Factores Evaluados:</h4>
+                <div id="scoreFactores" style="display:flex;flex-direction:column;gap:8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formalizar Solicitud -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">📝 Formalizar Solicitud a Comité</div></div>
+            <div class="card-body">
+              <form id="formSolicitud">
+                <div class="form-group">
+                  <label class="form-label">Destino del Crédito</label>
+                  <select class="form-control" id="solDestino">
+                    <option value="Mejora de Vivienda">Mejora de Vivienda</option>
+                    <option value="Capital de Trabajo">Capital de Trabajo / Negocio</option>
+                    <option value="Consumo Personal">Consumo Personal / Salud</option>
+                    <option value="Compra de Vehículo">Compra de Vehículo</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Observaciones / Avales</label>
+                  <textarea class="form-control" id="solObs" placeholder="Observaciones adicionales o garantías..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-gold" style="width:100%;">🚀 Registrar y Enviar a Comité de Crédito</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: COMITÉ -->
+      <div class="exp-panel" id="panel-comite">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏛️ Solicitudes Pendientes en Mesa de Aprobación</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>No. Solicitud</th>
+                  <th>Socio</th>
+                  <th>Producto</th>
+                  <th>Monto Solicitado</th>
+                  <th>Plazo</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Estado</th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaSolicitudes">
+                <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Cargando solicitudes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username || 'U').substring(0, 2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', () => { localStorage.clear(); window.location.href = '/'; });
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401) { localStorage.clear(); window.location.href = '/'; }
+  return r.json();
+}
+function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-MX') : '—'; }
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Cargar productos
+async function initProductos() {
+  try {
+    const res = await api('/api/originacion/productos');
+    if (res.success && res.data.length) {
+      document.getElementById('simProducto').innerHTML = res.data.map(p =>
+        `<option value="${p.Id}" data-tasa="${p.TasaAnual}">${p.Nombre}</option>`
+      ).join('');
+    }
+  } catch (e) {}
+}
+
+// Simulador
+document.getElementById('formSimulador').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    monto: parseFloat(document.getElementById('simMonto').value),
+    plazoMeses: parseInt(document.getElementById('simPlazo').value),
+    frecuencia: document.getElementById('simFrecuencia').value,
+    tasaAnual: parseFloat(document.getElementById('simTasa').value),
+    tasaIva: parseFloat(document.getElementById('simIva').value),
+  };
+
+  try {
+    const res = await api('/api/originacion/simular', 'POST', body);
+    if (!res.success) { toast('Error en simulación', 'error'); return; }
+
+    const r = res.resumen;
+    document.getElementById('resCuota').textContent   = fmt(r.cuotaEstimada);
+    document.getElementById('resInteres').textContent = fmt(r.totalInteres);
+    document.getElementById('resCAT').textContent     = r.catEstimado + '%';
+    document.getElementById('resMonto').textContent   = fmt(r.montoSolicitado);
+    document.getElementById('resIva').textContent     = fmt(r.totalIva);
+    document.getElementById('resTotal').textContent   = fmt(r.costoTotalCredito);
+
+    document.getElementById('tablaSimulacion').innerHTML = res.amortizacion.map(a => `
+      <tr>
+        <td style="font-weight:600;">#${a.numPago}</td>
+        <td style="color:var(--text-secondary);">${fmtDate(a.fechaVencimiento)}</td>
+        <td style="color:var(--text-primary);">${fmt(a.capital)}</td>
+        <td style="color:var(--color-gold);">${fmt(a.interes)}</td>
+        <td style="color:var(--text-muted);">${fmt(a.iva)}</td>
+        <td style="font-weight:700;color:#28a745;">${fmt(a.pagoTotal)}</td>
+        <td style="font-weight:600;color:var(--text-secondary);">${fmt(a.saldoPendiente)}</td>
+      </tr>
+    `).join('');
+  } catch (e) { toast('Error al calcular simulación', 'error'); }
+});
+
+// Scoring
+async function evaluarScoring() {
+  const socioId = document.getElementById('scoringSocioId').value;
+  const monto = document.getElementById('simMonto').value;
+  const cuota = document.getElementById('resCuota').textContent.replace(/[^0-9.]/g,'');
+
+  try {
+    const res = await api(`/api/originacion/evaluar-scoring/${socioId}?monto=${monto}&cuota=${cuota}`);
+    if (!res.success) { toast('Error al evaluar socio', 'error'); return; }
+
+    document.getElementById('scoringResult').style.display = 'block';
+    document.getElementById('scoreCircle').textContent = res.score;
+    document.getElementById('scoreSocioNombre').textContent = `${res.socio.nombre} (No. Socio: ${res.socio.numSocio})`;
+
+    const box = document.getElementById('scoreBox');
+    const circle = document.getElementById('scoreCircle');
+    const dict = document.getElementById('scoreDictamen');
+
+    if (res.dictamenRecomendado === 'APROBACION_AUTOMATICA') {
+      dict.textContent = '🟢 APROBACIÓN RECOMENDADA';
+      box.style.background = 'rgba(40,167,69,0.1)'; box.style.borderColor = '#28a745';
+      circle.style.background = '#28a745';
+    } else if (res.dictamenRecomendado === 'REVISIÓN_COMITE') {
+      dict.textContent = '🟡 REVISIÓN COMITÉ DE CRÉDITO';
+      box.style.background = 'rgba(255,193,7,0.1)'; box.style.borderColor = '#ffc107';
+      circle.style.background = '#ffc107';
+    } else {
+      dict.textContent = '🔴 RECHAZADO POR RIESGO / MORA';
+      box.style.background = 'rgba(220,53,69,0.1)'; box.style.borderColor = '#dc3545';
+      circle.style.background = '#dc3545';
+    }
+
+    document.getElementById('scoreFactores').innerHTML = res.factores.map(f => `
+      <div style="background:var(--color-bg-surface);padding:8px 12px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;">
+        <span>${f.factor}</span>
+        <strong style="color:var(--color-gold);">${f.efecto}</strong>
+      </div>
+    `).join('');
+  } catch (e) { toast('Error en evaluación', 'error'); }
+}
+
+// Formalizar solicitud
+document.getElementById('formSolicitud').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    socioId: parseInt(document.getElementById('scoringSocioId').value),
+    productoId: parseInt(document.getElementById('simProducto').value),
+    montoSolicitado: parseFloat(document.getElementById('simMonto').value),
+    plazoMeses: parseInt(document.getElementById('simPlazo').value),
+    destino: document.getElementById('solDestino').value,
+    observacion: document.getElementById('solObs').value,
+  };
+
+  try {
+    const res = await api('/api/originacion/crear-solicitud', 'POST', body);
+    if (res.success) {
+      toast('Solicitud enviada a Comité exitosamente', 'success');
+      loadSolicitudes();
+    }
+  } catch (e) { toast('Error al crear solicitud', 'error'); }
+});
+
+// Cargar solicitudes
+async function loadSolicitudes() {
+  try {
+    const res = await api('/api/originacion/solicitudes');
+    if (res.success) {
+      document.getElementById('tablaSolicitudes').innerHTML = res.data.length ? res.data.map(s => `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--color-gold);">#${s.SolicitudId}</td>
+          <td style="font-weight:600;">${s.Socio || '—'}</td>
+          <td>${s.Producto}</td>
+          <td style="font-weight:700;color:#28a745;">${fmt(s.MontoSolicitado)}</td>
+          <td>${s.PlazoMeses} meses</td>
+          <td style="font-size:12px;color:var(--text-muted);">${fmtDate(s.FechaSolicitud)}</td>
+          <td><span class="badge badge-warning">En Dictamen</span></td>
+          <td style="text-align:center;">
+            <button class="btn btn-primary btn-sm" onclick="toast('Solicitud aprobada por Comité','success')">✅ Aprobar</button>
+          </td>
+        </tr>
+      `).join('') : `<tr><td colspan="8" style="text-align:center;padding:30px;">Sin solicitudes registradas</td></tr>`;
+    }
+  } catch (e) {}
+}
+
+// Navigation Tabs
+document.querySelectorAll('.exp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.exp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.exp-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+    if (tab.dataset.tab === 'comite') loadSolicitudes();
+  });
+});
+
+initProductos();
+</script>
+</body>
+</html>

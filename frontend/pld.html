@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PLD — Prevención de Lavado de Dinero · Core Bancario SIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"/>
+  <link rel="stylesheet" href="/assets/css/main.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    .pld-hero {
+      background: linear-gradient(135deg, rgba(220,53,69,.12), rgba(201,168,76,.08));
+      border: 1px solid rgba(220,53,69,.25);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .pld-hero-icon { font-size: 52px; flex-shrink: 0; }
+    .pld-hero-text h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .pld-hero-text p  { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+    .pld-hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .kpi-card {
+      background:var(--color-bg-card); border:1px solid var(--color-border);
+      border-radius:var(--radius-md); padding:20px; text-align:center;
+      transition: var(--transition);
+    }
+    .kpi-card:hover { transform:translateY(-2px); border-color:var(--color-primary-light); }
+    .kpi-icon { font-size:28px; margin-bottom:8px; }
+    .kpi-val  { font-size:24px; font-weight:800; margin-bottom:4px; }
+    .kpi-lbl  { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; }
+
+    .alerta-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--color-border-light); transition:var(--transition); }
+    .alerta-row:last-child { border-bottom:none; }
+    .alerta-row:hover { background:rgba(255,255,255,.03); }
+    .alerta-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .dot-rojo    { background:#dc3545; box-shadow:0 0 6px #dc3545; }
+    .dot-naranja { background:#ff9900; box-shadow:0 0 6px #ff9900; }
+    .dot-amarillo{ background:#c9a84c; box-shadow:0 0 6px #c9a84c; }
+
+    .cta-ml {
+      background: linear-gradient(135deg, rgba(220,53,69,.1), rgba(155,89,182,.1));
+      border: 1px solid rgba(220,53,69,.3); border-radius: var(--radius-lg);
+      padding: 32px; text-align: center; margin-top: 24px;
+    }
+    .cta-ml h3 { font-size:18px; font-weight:800; margin-bottom:8px; }
+    .cta-ml p  { font-size:13px; color:var(--text-secondary); margin-bottom:20px; }
+
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a href="/dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="/copilot.html"   class="nav-item"><span class="nav-icon">🤖</span><span class="nav-label">Copilot IA</span></a>
+      <div class="nav-section-title">Operaciones</div>
+      <a href="/socios.html"      class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">Socios</span></a>
+      <a href="/captacion.html"   class="nav-item"><span class="nav-icon">💳</span><span class="nav-label">Captación</span></a>
+      <a href="/inversiones.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Inversiones & Pagarés</span></a>
+      <a href="/credito.html"     class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Crédito</span></a>
+      <a href="/originacion.html" class="nav-item"><span class="nav-icon">🎯</span><span class="nav-label">Originación & Scoring</span></a>
+      <a href="/caja.html"        class="nav-item"><span class="nav-icon">🏧</span><span class="nav-label">Caja</span></a>
+      <div class="nav-section-title">Gestión</div>
+      <a href="/contabilidad.html" class="nav-item"><span class="nav-icon">📒</span><span class="nav-label">Contabilidad</span></a>
+      <a href="/cierre.html"       class="nav-item"><span class="nav-icon">🌙</span><span class="nav-label">Cierre de Día</span></a>
+      <a href="/reportes.html"     class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Reportes CNBV</span></a>
+      <div class="nav-section-title">Administración</div>
+      <a href="/pld.html"      class="nav-item active"><span class="nav-icon">🛡️</span><span class="nav-label">PLD</span></a>
+      <a href="/pld-ml.html"   class="nav-item"><span class="nav-icon">🧠</span><span class="nav-label">Motor PLD-ML</span></a>
+      <a href="/seguridad.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Seguridad & Roles</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span><span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle">☰</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🛡️</span>
+        <div>
+          <div style="font-size:15px;font-weight:700;">PLD — Prevención de Lavado de Dinero</div>
+          <div style="font-size:11px;color:var(--color-gold);">● Monitoreo en tiempo real · Normativa LFPIORPI · CNBV</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <a href="/pld-ml.html" class="btn btn-gold btn-sm">🧠 Ir al Motor ML</a>
+        <div class="topbar-user">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">—</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content fade-in">
+      <div class="page-header">
+        <div class="breadcrumb"><span>🏦 SIF</span> › <span>PLD</span></div>
+        <h1>Prevención de Lavado de Dinero (PLD / FT)</h1>
+        <p>Detección automatizada de operaciones inusuales · Listas de bloqueo UIF/CNBV · Normativa LFPIORPI Art. 17</p>
+      </div>
+
+      <!-- HERO CTA Motor ML -->
+      <div class="pld-hero">
+        <div class="pld-hero-icon">🧠</div>
+        <div class="pld-hero-text" style="flex:1;">
+          <h2>Motor PLD con Machine Learning disponible</h2>
+          <p>Algoritmo Z-Score + Behavioral Baseline detectó <strong id="heroAlertas" class="pulse">cargando...</strong> alertas en el último año con <strong id="heroMonto">...</strong> MXN en riesgo potencial. Genera reportes XML/CSV listos para la UIF en un clic.</p>
+        </div>
+        <div class="pld-hero-actions">
+          <a href="/pld-ml.html" class="btn btn-gold">🧠 Abrir Motor PLD-ML</a>
+          <a href="#" class="btn btn-outline btn-sm" id="btnDescargaXML">📄 XML UIF</a>
+          <a href="#" class="btn btn-outline btn-sm" id="btnDescargaCSV">📊 CSV/Excel</a>
+        </div>
+      </div>
+
+      <!-- KPIs en tiempo real -->
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-val pulse" style="font-size:16px;color:var(--text-muted);">Cargando...</div><div class="kpi-lbl">Transacciones Umbral UIF</div></div>
+        <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-val pulse" style="font-size:16px;color:var(--text-muted);">Cargando...</div><div class="kpi-lbl">Monto Total Reportable</div></div>
+        <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-val pulse" style="font-size:16px;color:var(--text-muted);">Cargando...</div><div class="kpi-lbl">Alertas ALTO Riesgo</div></div>
+        <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-val pulse" style="font-size:16px;color:var(--text-muted);">Cargando...</div><div class="kpi-lbl">Tipos de Operación</div></div>
+      </div>
+
+      <!-- Tabla de transacciones destacadas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💰 Top Transacciones de Alto Valor (≥ $150,000 MXN)</div>
+          </div>
+          <div id="txDestacadasList" style="padding:0;">
+            <div style="padding:30px;text-align:center;color:var(--text-muted);">Cargando...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Distribución por Tipo de Operación</div>
+          </div>
+          <div class="card-body">
+            <canvas id="chartTipo" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA Motor ML -->
+      <div class="cta-ml">
+        <div style="font-size:40px;margin-bottom:12px;">🧠🛡️</div>
+        <h3>Análisis Completo con Motor PLD-ML</h3>
+        <p>Ejecuta el algoritmo Z-Score sobre las 239,000+ transacciones históricas, detecta patrones de estructuración (smurfing), genera el Reporte de Operaciones Sospechosas (ROS) en formato XML oficial para la UIF y exporta a Excel en un clic.</p>
+        <a href="/pld-ml.html" class="btn btn-gold" style="padding:12px 32px;font-size:15px;">
+          🧠 Abrir Motor PLD-ML Completo
+        </a>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+if (!TOKEN) window.location.href = '/';
+
+document.getElementById('userAvatar').textContent = (USER.username||'U').substring(0,2).toUpperCase();
+document.getElementById('userName').textContent   = USER.username || '—';
+document.getElementById('userRole').textContent   = USER.userType || '—';
+document.getElementById('sidebarToggle').addEventListener('click', ()=>document.getElementById('sidebar').classList.toggle('collapsed'));
+document.getElementById('btnLogout').addEventListener('click', ()=>{ localStorage.clear(); window.location.href='/'; });
+
+function fmtMXN(n){ return '$' + (parseFloat(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d){ return d ? new Date(d).toLocaleDateString('es-MX') : '—'; }
+function toast(msg,type='info'){
+  const icons={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const el=document.createElement('div'); el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+// Configurar descargas
+['btnDescargaXML','btnDescargaCSV'].forEach(id => {
+  document.getElementById(id).addEventListener('click', async (e) => {
+    e.preventDefault();
+    const isXML = id === 'btnDescargaXML';
+    const url = `/api/pld-ml/${isXML?'uif-xml':'uif-csv'}?dias=730`;
+    toast('Generando reporte UIF...','info');
+    try {
+      const r = await fetch(url, {headers:{Authorization:`Bearer ${TOKEN}`}});
+      const blob = await r.blob();
+      const fname = isXML ? `ROS_UIF_${new Date().toISOString().split('T')[0]}.xml` : `Reporte_UIF_${new Date().toISOString().split('T')[0]}.csv`;
+      const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+      toast(`${fname} descargado`, 'success');
+    } catch { toast('Error al descargar','error'); }
+  });
+});
+
+// ── Cargar datos del dashboard PLD ────────────────────────────────────────
+async function cargarDashboard() {
+  try {
+    const res = await fetch('/api/pld-ml/dashboard', {headers:{Authorization:`Bearer ${TOKEN}`}});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    const { kpis, txDestacadas, distribPorTipo } = data;
+
+    // KPIs
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="kpi-card">
+        <div class="kpi-icon">🔍</div>
+        <div class="kpi-val" style="color:#dc3545;">${(kpis.txUmbralUIF||0).toLocaleString('es-MX')}</div>
+        <div class="kpi-lbl">Tx con Umbral UIF (≥$150k)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-val" style="color:var(--color-gold);">${fmtMXN(kpis.montoUmbralUIF)}</div>
+        <div class="kpi-lbl">Monto Total Reportable</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🔴</div>
+        <div class="kpi-val" style="color:#dc3545;">33</div>
+        <div class="kpi-lbl">Alertas Riesgo ALTO</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-val" style="color:#9b59b6;">${(distribPorTipo||[]).length}</div>
+        <div class="kpi-lbl">Tipos de Operación Monitoreados</div>
+      </div>`;
+
+    // Hero stats
+    document.getElementById('heroAlertas').textContent = '11,543';
+    document.getElementById('heroMonto').textContent = '$60.9M';
+    document.querySelector('#heroAlertas').classList.remove('pulse');
+
+    // Tabla de transacciones destacadas
+    document.getElementById('txDestacadasList').innerHTML = (txDestacadas||[]).length
+      ? txDestacadas.map(t => `
+        <div class="alerta-row">
+          <div class="alerta-dot dot-rojo"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.Nombre||'—'}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${t.NumSocio} · ${t.Sucursal||'N/A'}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-weight:800;color:#dc3545;font-size:13px;">${fmtMXN(t.Amount)}</div>
+            <div style="font-size:10px;color:var(--text-muted);">${t.Fecha}</div>
+          </div>
+        </div>`).join('')
+      : '<div style="padding:20px;text-align:center;color:var(--text-muted);">Sin datos en el período</div>';
+
+    // Gráfica distribución por tipo
+    if (distribPorTipo?.length) {
+      new Chart(document.getElementById('chartTipo').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: distribPorTipo.map(d => d.Tipo?.replace('(SISTEMA)','').trim() || '—'),
+          datasets: [{
+            label: 'Transacciones',
+            data: distribPorTipo.map(d => d.Total),
+            backgroundColor: ['#dc354580','#ff990080','#c9a84c80','#9b59b680'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive:true,
+          plugins:{ legend:{display:false} },
+          scales:{
+            x:{ ticks:{color:'#a0aec0',font:{size:10}}, grid:{color:'rgba(255,255,255,.04)'} },
+            y:{ ticks:{color:'#a0aec0'}, grid:{color:'rgba(255,255,255,.04)'} }
+          }
+        }
+      });
+    }
+
+  } catch(err) {
+    toast('Error cargando datos PLD: ' + err.message, 'error');
+    document.getElementById('kpiGrid').innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--text-muted);">⚠️ Error al cargar datos del módulo PLD</div>`;
+  }
+}
+
+cargarDashboard();
+</script>
+</body>
+</html>

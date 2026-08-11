@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Core Bancario SIF</title>
+  <meta name="description" content="Dashboard ejecutivo del Core Bancario para Cajas Populares" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SIF Core Bancario</div>
+        <div class="sidebar-logo-sub">Cajas Populares MX</div>
+      </div>
+    </a>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+
+      <a href="/dashboard.html" class="nav-item active" id="nav-dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+
+      <a href="/copilot.html" class="nav-item" id="nav-copilot">
+        <span class="nav-icon">🤖</span>
+        <span class="nav-label">Copilot IA</span>
+      </a>
+
+      <div class="nav-section-title">Operaciones</div>
+
+      <a href="/socios.html" class="nav-item" id="nav-socios">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Socios</span>
+      </a>
+
+      <a href="/captacion.html" class="nav-item" id="nav-captacion">
+        <span class="nav-icon">💳</span>
+        <span class="nav-label">Captación</span>
+      </a>
+
+      <a href="/inversiones.html" class="nav-item" id="nav-inversiones">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Inversiones & Pagarés</span>
+      </a>
+
+      <a href="/credito.html" class="nav-item" id="nav-credito">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">Crédito</span>
+      </a>
+
+      <a href="/originacion.html" class="nav-item" id="nav-originacion">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-label">Originación & Scoring</span>
+      </a>
+
+      <a href="/caja.html" class="nav-item" id="nav-caja">
+        <span class="nav-icon">🏧</span>
+        <span class="nav-label">Caja</span>
+      </a>
+
+      <div class="nav-section-title">Gestión</div>
+
+      <a href="/contabilidad.html" class="nav-item" id="nav-conta">
+        <span class="nav-icon">📒</span>
+        <span class="nav-label">Contabilidad</span>
+      </a>
+
+      <a href="/reportes.html" class="nav-item" id="nav-reportes">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Reportes CNBV</span>
+      </a>
+
+      <div class="nav-section-title">Administración</div>
+
+      <a href="/pld.html" class="nav-item" id="nav-pld">
+        <span class="nav-icon">🛡️</span>
+        <span class="nav-label">PLD</span>
+        <span class="nav-badge" id="pldBadge">0</span>
+      </a>
+
+      <a href="/seguridad.html" class="nav-item" id="nav-seg">
+        <span class="nav-icon">🔐</span>
+        <span class="nav-label">Seguridad</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" id="btnLogout" style="cursor:pointer;border-radius:8px;">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-label">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="topbar-toggle" id="sidebarToggle" title="Colapsar menú">☰</button>
+
+      <h2 class="topbar-title">Dashboard Ejecutivo</h2>
+
+      <div class="topbar-search">
+        <span class="topbar-search-icon">🔍</span>
+        <input type="text" placeholder="Buscar socio, cuenta, crédito..." id="globalSearch" />
+      </div>
+
+      <div class="topbar-actions">
+        <button class="topbar-btn" title="Notificaciones">
+          🔔
+          <span class="badge" id="notifBadge" style="display:none"></span>
+        </button>
+        <button class="topbar-btn" title="Actualizar datos" id="refreshBtn">🔄</button>
+
+        <div class="topbar-user" id="userMenu">
+          <div class="user-avatar" id="userAvatar">--</div>
+          <div>
+            <div class="user-name" id="userName">Cargando...</div>
+            <div class="user-role" id="userRole">—</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content fade-in">
+
+      <!-- Breadcrumb -->
+      <div class="page-header">
+        <div class="breadcrumb">
+          <span>🏦 SIF</span> › <span>Dashboard</span>
+        </div>
+        <h1>Panel de Control</h1>
+        <p id="fechaHoy">Cargando fecha...</p>
+      </div>
+
+      <!-- ── KPI CARDS ─────────────────────────────────────────── -->
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- Socios -->
+        <div class="kpi-card" style="--kpi-color:#1e88b0;--kpi-bg:rgba(30,136,176,0.15)">
+          <div class="kpi-header">
+            <div class="kpi-label">Socios Activos</div>
+            <div class="kpi-icon">👥</div>
+          </div>
+          <div class="kpi-value" id="kpi-socios">—</div>
+          <div class="kpi-change neutral" id="kpi-socios-new">
+            <span>+</span><span id="kpi-socios-new-val">0</span><span>hoy</span>
+          </div>
+        </div>
+
+        <!-- Captación -->
+        <div class="kpi-card" style="--kpi-color:#c9a84c;--kpi-bg:rgba(201,168,76,0.12)">
+          <div class="kpi-header">
+            <div class="kpi-label">Captación Total</div>
+            <div class="kpi-icon">💳</div>
+          </div>
+          <div class="kpi-value" id="kpi-captacion">—</div>
+          <div class="kpi-change up">
+            <span>📦</span><span id="kpi-cuentas">0</span><span>cuentas activas</span>
+          </div>
+        </div>
+
+        <!-- Cartera -->
+        <div class="kpi-card" style="--kpi-color:#28a745;--kpi-bg:rgba(40,167,69,0.12)">
+          <div class="kpi-header">
+            <div class="kpi-label">Cartera de Crédito</div>
+            <div class="kpi-icon">💰</div>
+          </div>
+          <div class="kpi-value" id="kpi-cartera">—</div>
+          <div class="kpi-change neutral">
+            <span>📋</span><span id="kpi-creditos">0</span><span>créditos activos</span>
+          </div>
+        </div>
+
+        <!-- Morosidad -->
+        <div class="kpi-card" style="--kpi-color:#dc3545;--kpi-bg:rgba(220,53,69,0.12)">
+          <div class="kpi-header">
+            <div class="kpi-label">Índice de Morosidad</div>
+            <div class="kpi-icon">⚠️</div>
+          </div>
+          <div class="kpi-value" id="kpi-morosidad">—</div>
+          <div class="kpi-change down">
+            <span>💸</span>
+            <span id="kpi-morosa">$0</span>
+            <span>cartera vencida</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRÁFICAS ───────────────────────────────────────────── -->
+      <div class="charts-grid">
+        <!-- Captación mensual -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Captación vs Retiros — Últimos 12 meses</div>
+              <div class="card-subtitle">Depósitos y retiros acumulados por mes</div>
+            </div>
+            <span class="badge badge-info">Tiempo real</span>
+          </div>
+          <div class="card-body" style="position:relative;height:280px;">
+            <canvas id="chartCaptacion"></canvas>
+            <div class="loading-overlay" id="loadingCaptacion">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartera por producto -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Cartera por Producto</div>
+              <div class="card-subtitle">Distribución de saldos</div>
+            </div>
+          </div>
+          <div class="card-body" style="position:relative;height:280px;">
+            <canvas id="chartProductos"></canvas>
+            <div class="loading-overlay" id="loadingProductos">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ALERTAS + CAJA HOY ─────────────────────────────────── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px;">
+        <!-- Vencimientos -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">⏰ Próximos Vencimientos</div>
+              <div class="card-subtitle">Esta semana</div>
+            </div>
+            <span class="badge badge-warning" id="vencBadge">0</span>
+          </div>
+          <div class="card-body" style="padding:12px;">
+            <div class="alert-list" id="listVencimientos">
+              <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Cargando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Morosidad TOP -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🔴 Créditos en Mora</div>
+              <div class="card-subtitle">Mayor antigüedad</div>
+            </div>
+            <span class="badge badge-danger" id="moraBadge">0</span>
+          </div>
+          <div class="card-body" style="padding:12px;">
+            <div class="alert-list" id="listMorosidad">
+              <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Cargando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caja Hoy -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🏧 Caja — Hoy</div>
+              <div class="card-subtitle">Movimientos del día</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="background:var(--color-bg-surface);border-radius:10px;padding:16px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Ingresos</div>
+                <div style="font-size:24px;font-weight:800;color:#28a745;" id="cajaIngresos">$0.00</div>
+              </div>
+              <div style="background:var(--color-bg-surface);border-radius:10px;padding:16px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Egresos</div>
+                <div style="font-size:24px;font-weight:800;color:#dc3545;" id="cajaEgresos">$0.00</div>
+              </div>
+              <div style="background:var(--color-bg-surface);border-radius:10px;padding:16px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Operaciones</div>
+                <div style="font-size:24px;font-weight:800;color:var(--color-gold);" id="cajaOps">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CORE BANCARIO — DASHBOARD PRINCIPAL
+   ═══════════════════════════════════════════════════════ */
+
+const TOKEN = localStorage.getItem('sif_token');
+const USER  = JSON.parse(localStorage.getItem('sif_user') || '{}');
+
+// Si no hay sesión, redirigir al login
+if (!TOKEN) window.location.href = '/';
+
+// ── Datos del usuario en topbar ──────────────────────────
+document.getElementById('userName').textContent  = USER.username || 'Usuario';
+document.getElementById('userRole').textContent  = USER.userType || '—';
+const initials = (USER.username || 'U').substring(0,2).toUpperCase();
+document.getElementById('userAvatar').textContent = initials;
+
+// ── Fecha actual ──────────────────────────────────────────
+const now = new Date();
+document.getElementById('fechaHoy').textContent =
+  now.toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// ── API Helper ────────────────────────────────────────────
+async function api(path) {
+  const r = await fetch(path, {
+    headers: { 'Authorization': `Bearer ${TOKEN}` }
+  });
+  if (r.status === 401 || r.status === 403) {
+    localStorage.clear();
+    window.location.href = '/';
+  }
+  return r.json();
+}
+
+// ── Formateo de moneda ────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined) return '—';
+  const num = parseFloat(n);
+  if (num >= 1_000_000) return '$' + (num / 1_000_000).toFixed(2) + 'M';
+  if (num >= 1_000)     return '$' + (num / 1_000).toFixed(1) + 'K';
+  return '$' + num.toLocaleString('es-MX', { minimumFractionDigits: 2 });
+}
+
+// ── Toast notifications ───────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── Sidebar toggle ────────────────────────────────────────
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+// ── Logout ────────────────────────────────────────────────
+document.getElementById('btnLogout').addEventListener('click', () => {
+  localStorage.clear();
+  window.location.href = '/';
+});
+
+// ── Cargar KPIs ───────────────────────────────────────────
+async function loadKPIs() {
+  try {
+    const res = await api('/api/dashboard/kpis');
+    if (!res.success) return;
+    const d = res.data;
+
+    document.getElementById('kpi-socios').textContent     = d.socios.total.toLocaleString('es-MX');
+    document.getElementById('kpi-socios-new-val').textContent = d.socios.nuevosHoy;
+    document.getElementById('kpi-captacion').textContent  = fmt(d.captacion.total);
+    document.getElementById('kpi-cuentas').textContent    = d.captacion.cuentasActivas.toLocaleString('es-MX');
+    document.getElementById('kpi-cartera').textContent    = fmt(d.credito.carteraTotal);
+    document.getElementById('kpi-creditos').textContent   = d.credito.creditosActivos.toLocaleString('es-MX');
+    document.getElementById('kpi-morosidad').textContent  = d.credito.indiceMorosidad + '%';
+    document.getElementById('kpi-morosa').textContent     = fmt(d.credito.carteraMorosa);
+    document.getElementById('cajaIngresos').textContent   = fmt(d.caja.ingresos);
+    document.getElementById('cajaEgresos').textContent    = fmt(d.caja.egresos);
+    document.getElementById('cajaOps').textContent        = d.caja.operaciones.toLocaleString('es-MX');
+  } catch (e) {
+    toast('Error al cargar KPIs', 'error');
+  }
+}
+
+// ── Chart: Captación Mensual ──────────────────────────────
+let chartCap = null;
+async function loadChartCaptacion() {
+  document.getElementById('loadingCaptacion').style.display = 'flex';
+  try {
+    const res = await api('/api/dashboard/captacion-mensual');
+    document.getElementById('loadingCaptacion').style.display = 'none';
+    if (!res.success || !res.data.length) return;
+
+    const labels    = res.data.map(r => r.MesLabel);
+    const depositos = res.data.map(r => r.Depositos);
+    const retiros   = res.data.map(r => r.Retiros);
+
+    const ctx = document.getElementById('chartCaptacion').getContext('2d');
+    if (chartCap) chartCap.destroy();
+    chartCap = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Depósitos',
+            data: depositos,
+            backgroundColor: 'rgba(30,136,176,0.7)',
+            borderColor: '#1e88b0',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Retiros',
+            data: retiros,
+            backgroundColor: 'rgba(220,53,69,0.5)',
+            borderColor: '#dc3545',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#8b949e', font: { family: 'Inter', size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw)
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: {
+            ticks: { color: '#8b949e', callback: v => fmt(v) },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          },
+        },
+      },
+    });
+  } catch {
+    document.getElementById('loadingCaptacion').style.display = 'none';
+  }
+}
+
+// ── Chart: Cartera por Producto ───────────────────────────
+let chartProd = null;
+async function loadChartProductos() {
+  document.getElementById('loadingProductos').style.display = 'flex';
+  try {
+    const res = await api('/api/dashboard/cartera-productos');
+    document.getElementById('loadingProductos').style.display = 'none';
+    if (!res.success || !res.data.length) return;
+
+    const colors = [
+      '#1e88b0','#c9a84c','#28a745','#dc3545','#17a2b8',
+      '#6f42c1','#fd7e14','#e83e8c',
+    ];
+
+    const ctx = document.getElementById('chartProductos').getContext('2d');
+    if (chartProd) chartProd.destroy();
+    chartProd = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: res.data.map(r => r.Producto),
+        datasets: [{
+          data: res.data.map(r => r.Saldo),
+          backgroundColor: colors,
+          borderColor: '#161b22',
+          borderWidth: 3,
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#8b949e', font: { family: 'Inter', size: 11 }, padding: 12 }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw)
+            }
+          }
+        },
+      },
+    });
+  } catch {
+    document.getElementById('loadingProductos').style.display = 'none';
+  }
+}
+
+// ── Alertas ───────────────────────────────────────────────
+async function loadAlertas() {
+  try {
+    const res = await api('/api/dashboard/alertas');
+    if (!res.success) return;
+    const d = res.data;
+
+    // Vencimientos
+    document.getElementById('vencBadge').textContent = d.vencimientos.length;
+    const listVenc = document.getElementById('listVencimientos');
+    listVenc.innerHTML = d.vencimientos.length
+      ? d.vencimientos.map(v => `
+          <div class="alert-item">
+            <div class="alert-icon">📅</div>
+            <div class="alert-content">
+              <div class="alert-title">${v.Nombre || 'Socio #' + v.PersonaId}</div>
+              <div class="alert-desc">Crédito #${v.CreditoId} · ${fmt(v.Saldo)}</div>
+              <div class="alert-time">${new Date(v.FechaVencimiento).toLocaleDateString('es-MX')}</div>
+            </div>
+          </div>`).join('')
+      : '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Sin vencimientos esta semana 🎉</div>';
+
+    // Morosidad
+    document.getElementById('moraBadge').textContent = d.morosidad.length;
+    const listMora = document.getElementById('listMorosidad');
+    listMora.innerHTML = d.morosidad.length
+      ? d.morosidad.map(m => `
+          <div class="alert-item">
+            <div class="alert-icon">🔴</div>
+            <div class="alert-content">
+              <div class="alert-title">${m.Nombre || 'Crédito #' + m.CreditoId}</div>
+              <div class="alert-desc">${m.DiasVencidos} días · ${fmt(m.Saldo)}</div>
+            </div>
+          </div>`).join('')
+      : '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Sin créditos en mora 🎉</div>';
+
+    // PLD badge
+    if (d.pld.length > 0) {
+      document.getElementById('pldBadge').textContent = d.pld.length;
+      document.getElementById('notifBadge').style.display = 'block';
+      document.getElementById('notifBadge').textContent = d.pld.length;
+    }
+  } catch (e) {
+    console.error('Error alertas:', e);
+  }
+}
+
+// ── Botón Actualizar ──────────────────────────────────────
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('refreshBtn');
+  btn.style.animation = 'spin 0.8s linear infinite';
+  btn.style.display = 'inline-block';
+  await Promise.all([loadKPIs(), loadChartCaptacion(), loadChartProductos(), loadAlertas()]);
+  btn.style.animation = '';
+  toast('Datos actualizados correctamente', 'success');
+});
+
+// ── Inicializar ───────────────────────────────────────────
+(async function init() {
+  await Promise.all([
+    loadKPIs(),
+    loadChartCaptacion(),
+    loadChartProductos(),
+    loadAlertas(),
+  ]);
+})();
+
+// Auto-refresh cada 5 minutos
+setInterval(() => {
+  loadKPIs();
+  loadAlertas();
+}, 5 * 60 * 1000);
+</script>
+</body>
+</html>
